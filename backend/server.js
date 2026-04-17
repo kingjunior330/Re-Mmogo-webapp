@@ -30,6 +30,37 @@ app.get('/', (req, res) => {
   res.json({ message: 'Re-Mmogo API is running with SQL Server' });
 });
 
+
+//save contribution
+app.post('/contributions', async (req, res) => {
+  try {
+    const {user_id,group_id, amount,contribution_month } = req.body;
+
+    await query(
+      `INSERT INTO contributions (user_id, group_id, amount, contribution_month) 
+      VALUES (@user_id, @group_id, @amount, @contribution_month)`,
+      { user_id, group_id, amount, contribution_month }
+    );
+
+    res.json({ message: 'Contribution saved successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save contribution', details: error.message });
+  }
+});
+
+//get contributions
+app.get('/contributions/:user_id', async (req, res) => {
+  try {
+    const result = await query(
+      'SELECT * FROM contributions WHERE user_id = @user_id ORDER BY contribution_month DESC',
+      { user_id: req.params.user_id }
+    );
+    res.json(result.recordset);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch contributions', details: error.message });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
