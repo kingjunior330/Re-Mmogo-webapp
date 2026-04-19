@@ -1,0 +1,172 @@
+.loan-app-page {
+  max-width: 420px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #b8d9d2, #a9c0ff);
+  font-family: Arial, Helvetica, sans-serif;
+  color: #1a1a1a;
+}
+
+.topbar {
+  background: #a9c0ff;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 2px solid #7a9bff;
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.topbar-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.content {
+  padding: 16px;
+}
+
+.intro {
+  font-size: 14px;
+  margin-bottom: 14px;
+  color: #222;
+}
+
+/* apply form */
+.apply-form {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 22px;
+}
+
+.apply-form label {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  margin-top: 8px;
+}
+
+.apply-form input {
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  background: #ffffff;
+  margin-bottom: 6px;
+}
+
+.apply-form input:focus {
+  outline: 2px solid #7a9bff;
+}
+
+.note {
+  font-size: 12px;
+  color: #444;
+  margin: 10px 0;
+  font-style: italic;
+}
+
+.btn-submit {
+  background: #29c24a;
+  color: white;
+  border: none;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 60%;
+  align-self: center;
+}
+
+.btn-submit:hover {
+  background: #22a63f;
+}
+
+.btn-submit:disabled {
+  background: #8fd69f;
+  cursor: not-allowed;
+}
+
+.form-msg {
+  text-align: center;
+  font-size: 13px;
+  margin-top: 10px;
+  color: #1a6e2e;
+}
+
+/* calculator */
+.calculator {
+  background: #f0ead9;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.calc-title {
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+
+.calculator label {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  margin-top: 6px;
+}
+
+.calculator input {
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  background: #ffffff;
+  margin-bottom: 6px;
+}
+
+.btn-calc {
+  background: #29c24a;
+  color: white;
+  border: none;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+  margin-bottom: 12px;
+}
+
+.btn-calc:hover {
+  background: #22a63f;
+}
+
+.calc-results {
+  font-size: 14px;
+}
+
+.calc-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.total-row {
+  font-weight: bold;
+  border-bottom: none;
+  padding-top: 8px;
+}
+
+@media (min-width: 700px) {
+  .loan-app-page {
+    max-width: 500px;
+  }
+}

@@ -4,23 +4,28 @@ import "../Members.css";
 const Members = () => {
 
    const [ showModal, setShowModal] = useState(false);
+
+   //store form data for new member
    const [ formData, setFormData] = useState ({
     fullName: "",
     email: "",
     role:"",
    });
 
+   // Handle form input changes
    const handleChange = (e) => {
-    setFormdata({
+    setFormData({
         ...formData,
         [e.target.name] : e.target.value,
     });
    };
 
+   // Handle form submission
    const handleSubmit = (e) => {
     e.preventDefault();
     console.log("New Member:", formData);
 
+    //reset form
     setFormData ({
         fullName: "",
         email: "",
@@ -39,6 +44,7 @@ const Members = () => {
             + Add member
         </button>
 
+         {/* Display list of members in a table */}
         {showModal && (
             <div className="modal-overlay">
                 <div className="modal">
@@ -57,7 +63,7 @@ const Members = () => {
                         <input
                         type="text"
                         name="fullName"
-                        value={formData.fullname}
+                        value={formData.fullName}
                         onChange={handleChange}
                         required
                         />
