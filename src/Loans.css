@@ -1,11 +1,7 @@
 .loans-page {
-  max-width: 420px;
-  margin: 0 auto;
   min-height: 100vh;
-  background: #dce6fb;
-  border: 2px solid #7a9bff;
-  font-family: Arial, Helvetica, sans-serif;
-  color: #1a1a1a;
+  background: #e8eefc;
+  font-family: Arial, sans-serif;
 }
 
 .topbar {
@@ -31,6 +27,8 @@
 
 .content {
   padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .intro {
@@ -57,8 +55,8 @@
 }
 
 .section-heading {
-  font-size: 15px;
-  margin-bottom: 10px;
+  font-size: 16px;
+  margin-bottom: 12px;
 }
 
 .empty-msg {
@@ -71,7 +69,7 @@
 .loan-card {
   background: #ffffff;
   border-radius: 8px;
-  padding: 14px;
+  padding: 16px;
   margin-bottom: 18px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
@@ -98,7 +96,7 @@
 
 .loan-amount {
   color: #c9185e;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: bold;
   margin: 6px 0 12px 0;
 }
@@ -110,7 +108,7 @@
 .detail-row {
   display: flex;
   justify-content: space-between;
-  padding: 4px 0;
+  padding: 5px 0;
 }
 
 .amount-left {
@@ -121,7 +119,7 @@
 .history-box {
   background: #d7ccf0;
   border-radius: 8px;
-  padding: 14px;
+  padding: 16px;
 }
 
 .history-title {
@@ -133,7 +131,7 @@
 .history-item {
   display: flex;
   justify-content: space-between;
-  padding: 8px 6px;
+  padding: 10px 6px;
   font-size: 14px;
   border-bottom: 1px solid rgba(0,0,0,0.1);
 }
@@ -147,8 +145,39 @@
   font-weight: bold;
 }
 
-@media (min-width: 700px) {
-  .loans-page {
-    max-width: 500px;
+
+/* TABLET */
+@media (min-width: 768px) {
+  .content {
+    padding: 28px;
+  }
+
+  .btn-apply {
+    width: auto;
+    padding: 14px 40px;
+  }
+}
+
+
+// DESKTOP 
+@media (min-width: 1024px) {
+  .content {
+    padding: 40px;
+  }
+
+  .loans-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+  }
+
+  .active-loans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .loan-amount {
+    font-size: 28px;
   }
 }
