@@ -5,10 +5,16 @@ import MainLayout from "./layout/MainLayout";
 import Reports from "./pages/Reports";
 import Loans from "./pages/Loans";
 import LoanApplication from "./pages/LoanApplication";
+import { AppProvider } from "./context/AppContext";
+import App from "./App";
 
 function App() {
   return (
+    ReactDOM.createRoot(document.getElementById("root")).render(
     <BrowserRouter>
+      <AppProvider>
+      <App />
+    </AppProvider>
       <Routes>
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
