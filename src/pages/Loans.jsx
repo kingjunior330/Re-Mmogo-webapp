@@ -1,33 +1,17 @@
-import { useState, useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useApp } from "../context/AppContext";
 import "../styles/Loans.css";
 
 function Loans() {
+
   const navigate = useNavigate();
+  const { loans } = useApp();
 
-  // active loans - will come from backend later
-  const [activeLoans, setActiveLoans] = useState([
-    {
-      id: 1,
-      amount: 4000,
-      amountLeft: 3500,
-      interestRate: 20,
-      dueDate: "30/07/2026",
-      member: "Kelvin thale",
-      status: "Active"
-    }
-  ]);
+  //split loans into active vs history based on status
+  const active = loans.filter((l) => l.status === "Active" || l.status === "Pending");
+  const history = loans.filter((l) => l.status === "Approved" || l.status === "Repaid");
 
-  const [history, setHistory] = useState([
-    { id: 1, date: "March 15", amount: 1000, status: "Approved" },
-    { id: 2, date: "February 15", amount: 1000, status: "Approved" },
-    { id: 3, date: "January 15", amount: 500, status: "Approved" }
-  ]);
-
-  // TODO: replace with real fetch once backend is up
-  useEffect(() => {
-    // fetch('/api/loans').then(...)
-  }, []);
 
   function handleApply() {
     navigate("/loans/apply");
@@ -51,10 +35,10 @@ function Loans() {
 
         <h3 className="section-heading">Active loans</h3>
 
-        {activeLoans.length === 0 ? (
-          <p className="empty-msg">You have no active loans.</p>
+        {active.length === 0 ? (
+          <p className="empty-msg">You have no active loans yet. Click above to apply.</p>
         ) : (
-          activeLoans.map((loan) => (
+          active.map((loan) => (
             <div className="loan-card" key={loan.id}>
               <div className="loan-card-header">
                 <span className="loan-label">Loan Amount</span>
@@ -87,12 +71,18 @@ function Loans() {
         <div className="history-box">
           <h4 className="history-title">Loan History</h4>
 
-          {history.map((h) => (
-            <div className="history-item" key={h.id}>
-              <span>{h.date} - P{h.amount}</span>
-              <span className="approved">✅ {h.status}</span>
-            </div>
-          ))}
+          {history.length === 0 ? (
+            <p style={{ textAlign: "center", fontSize: "13px", color: "#666" }}>
+              No past loans yet.
+            </p>
+          ) : (
+            history.map((h) => (
+              <div className="history-item" key={h.id}>
+                <span>{h.dueDate} - P{h.amount}</span>
+                <span className="approved">✅ {h.status}</span>
+              </div>
+            ))
+          )}
         </div>
 
       </main>
