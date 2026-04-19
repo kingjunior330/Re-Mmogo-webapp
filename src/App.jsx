@@ -7,6 +7,8 @@ import Loans from "./pages/Loans";
 import LoanApplication from "./pages/LoanApplication";
 import { AppProvider } from "./context/AppContext";
 import App from "./App";
+import Contributions from "./pages/Contributions";
+
 
 function App() {
   return (
@@ -17,10 +19,11 @@ function App() {
     </AppProvider>
       <Routes>
         <Route element={<MainLayout />}>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Home />} />3
           <Route path="/login" element={<Login />} />
           <Route path="/loans" element={<Loans />} />
           <Route path="/loans/apply" element={<LoanApplication />} />
+          <Route path="/contributions" element={<Contributions />} />
         </Route>
       </Routes>
     </BrowserRouter>
