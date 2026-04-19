@@ -96,6 +96,11 @@
   margin-top: auto;
 }
 
+@media (max-width: 1023px) {
+  .sidebar {
+    display: none;
+  }
+}
 .logout-btn {
   background: white;
   border: 1px solid #999;
