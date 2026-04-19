@@ -33,56 +33,63 @@ function Loans() {
           + Apply for loan
         </button>
 
-        <h3 className="section-heading">Active loans</h3>
+        <div className="loans-layout">
 
-        {active.length === 0 ? (
-          <p className="empty-msg">You have no active loans yet. Click above to apply.</p>
-        ) : (
-          active.map((loan) => (
-            <div className="loan-card" key={loan.id}>
-              <div className="loan-card-header">
-                <span className="loan-label">Loan Amount</span>
-                <span className="status-badge">{loan.status}</span>
-              </div>
-              <p className="loan-amount">P{loan.amount}</p>
+          <div>
+            <h3 className="section-heading">Active loans</h3>
 
-              <div className="loan-details">
-                <div className="detail-row">
-                  <span>Amount left:</span>
-                  <span className="amount-left">P{loan.amountLeft}</span>
-                </div>
-                <div className="detail-row">
-                  <span>Interest rate:</span>
-                  <span>{loan.interestRate}%</span>
-                </div>
-                <div className="detail-row">
-                  <span>Due date:</span>
-                  <span>{loan.dueDate}</span>
-                </div>
-                <div className="detail-row">
-                  <span>Member:</span>
-                  <span>{loan.member}</span>
-                </div>
-              </div>
+            <div className="active-loans-grid">
+              {active.length === 0 ? (
+                <p className="empty-msg">You have no active loans yet. Click above to apply.</p>
+              ) : (
+                active.map((loan) => (
+                  <div className="loan-card" key={loan.id}>
+                    <div className="loan-card-header">
+                      <span className="loan-label">Loan Amount</span>
+                      <span className="status-badge">{loan.status}</span>
+                    </div>
+                    <p className="loan-amount">P{loan.amount}</p>
+
+                    <div className="loan-details">
+                      <div className="detail-row">
+                        <span>Amount left:</span>
+                        <span className="amount-left">P{loan.amountLeft}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span>Interest rate:</span>
+                        <span>{loan.interestRate}%</span>
+                      </div>
+                      <div className="detail-row">
+                        <span>Due date:</span>
+                        <span>{loan.dueDate}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span>Member:</span>
+                        <span>{loan.member}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
-          ))
-        )}
+          </div>
 
-        <div className="history-box">
-          <h4 className="history-title">Loan History</h4>
+          <div className="history-box">
+            <h4 className="history-title">Loan History</h4>
 
-          {history.length === 0 ? (
-            <p style={{ textAlign: "center", fontSize: "13px", color: "#666" }}>
-              No past loans yet.
-            </p>
-          ) : (
-            history.map((h) => (
-              <div className="history-item" key={h.id}>
-                <span>{h.dueDate} - P{h.amount}</span>
-                <span className="approved">✅ {h.status}</span>
-              </div>
-            ))
-          )}
+            {history.length === 0 ? (
+              <p style={{ textAlign: "center", fontSize: "13px", color: "#666" }}>
+                No past loans yet.
+              </p>
+            ) : (
+              history.map((h) => (
+                <div className="history-item" key={h.id}>
+                  <span>{h.dueDate} - P{h.amount}</span>
+                  <span className="approved">✅ {h.status}</span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
       </main>
