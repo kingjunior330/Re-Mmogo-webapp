@@ -1,113 +1,113 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useApp } from "../context/AppContext";
 import "../styles/LoanApplication.css";
 
 function LoanApplication() {
+
   const navigate = useNavigate();
+  const { addLoan } = useApp();
 
-  // form state
   const [amount, setAmount] = useState("");
-  const [term, setTerm] = useState("");
+  const [term, setTerm] = useState('');
   const [reason, setReason] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
 
-  // calculator state
-  const [calcAmount, setCalcAmount] = useState("");
+  const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  //calculator
+  const [calcAmt, setCalcAmt] = useState("");
   const [calcTerm, setCalcTerm] = useState("");
-  const [interest, setInterest] = useState(null);
-  const [monthly, setMonthly] = useState(null);
-  const [total, setTotal] = useState(null);
+  const [result, setResult] = useState({ interest: "", monthly: "", total: "" });
 
-  async function handleSubmit(e) {
+
+  const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!amount || !term || !reason) {
-      setMessage("Please fill in all fields.");
+    if (amount === "" || term === "" || reason === "") {
+      setMsg("Please fill in all the fields");
       return;
     }
 
     if (Number(amount) <= 0) {
-      setMessage("Amount must be greater than 0.");
+      setMsg("Enter a valid amount");
       return;
     }
 
-    setSubmitting(true);
-    setMessage("");
+    setLoading(true);
 
-    try {
-      const res = await fetch("/api/loans/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: Number(amount),
-          term: Number(term),
-          reason: reason
-        })
-      });
+    //work out due date based on term (assume term is in months)
+    let months = parseInt(term);
+    if (isNaN(months)) months = 6; //default if they wrote weird stuff
 
-      if (!res.ok) {
-        throw new Error("Application failed");
-      }
+    const due = new Date();
+    due.setMonth(due.getMonth() + months);
+    const dueStr = due.getDate() + "/" + (due.getMonth() + 1) + "/" + due.getFullYear();
 
-      setMessage("Application submitted. Waiting for signatory approval.");
-      setTimeout(() => navigate("/loans"), 1500);
+    //push to context
+    addLoan({
+      amount: Number(amount),
+      term: term,
+      reason: reason,
+      member: "Me",
+      dueDate: dueStr
+    });
 
-    } catch (err) {
-      setMessage("Something went wrong. Try again.");
-    }
+    setMsg("Submitted! Waiting for signatory approval.");
 
-    setSubmitting(false);
+    setTimeout(() => {
+      navigate("/loans");
+    }, 1200);
+
+    setLoading(false);
   }
 
-  // 20% per month on balance - matches motshelo rule
-  function calculate() {
-    let p = Number(calcAmount);
-    let months = Number(calcTerm);
 
-    if (!p || !months) {
-      setInterest(0);
-      setMonthly(0);
-      setTotal(0);
-      return;
-    }
+  function doCalc() {
+    let p = Number(calcAmt);
+    let m = Number(calcTerm);
 
-    let totalInterest = p * 0.20 * months;
-    let totalRepay = p + totalInterest;
-    let perMonth = totalRepay / months;
+    if (!p || !m) return;
 
-    setInterest(totalInterest.toFixed(2));
-    setMonthly(perMonth.toFixed(2));
-    setTotal(totalRepay.toFixed(2));
+    let intr = p * 0.2 * m;
+    let tot = p + intr;
+    let perMonth = tot / m;
+
+    setResult({
+      interest: intr.toFixed(2),
+      monthly: perMonth.toFixed(2),
+      total: tot.toFixed(2)
+    });
   }
+
 
   return (
     <div className="loan-app-page">
 
-      <header className="topbar">
+      <div className="topbar">
         <button className="menu-btn">&#9776;</button>
-        <h2 className="topbar-title">📝 Loans Application</h2>
-      </header>
+        <h2>📝 Loans Application</h2>
+      </div>
 
-      <main className="content">
+      <div className="content">
+
         <p className="intro">Apply for loans and track your repayments.</p>
 
-        <form className="apply-form" onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="apply-form">
 
           <label>Amount (BWP)</label>
           <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder=""
           />
 
           <label>Term</label>
           <input
             type="text"
+            placeholder="e.g 6 months"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            placeholder="e.g 6 months"
           />
 
           <label>Reason for Loan</label>
@@ -122,22 +122,22 @@ function LoanApplication() {
             You'll be notified if approved.
           </p>
 
-          <button type="submit" className="btn-submit" disabled={submitting}>
-            {submitting ? "Submitting..." : "Submit Application"}
+          <button type="submit" className="btn-submit" disabled={loading}>
+            {loading ? "Submitting..." : "Submit Application"}
           </button>
 
-          {message && <p className="form-msg">{message}</p>}
+          {msg && <p className="form-msg">{msg}</p>}
         </form>
 
-        {/* calculator */}
+
         <div className="calculator">
-          <h4 className="calc-title">Loan Interest Calculator</h4>
+          <h4>Loan Interest Calculator</h4>
 
           <label>Loan Amount</label>
           <input
             type="number"
-            value={calcAmount}
-            onChange={(e) => setCalcAmount(e.target.value)}
+            value={calcAmt}
+            onChange={(e) => setCalcAmt(e.target.value)}
             placeholder="100"
           />
 
@@ -149,27 +149,27 @@ function LoanApplication() {
             placeholder="e.g 6 months"
           />
 
-          <button type="button" className="btn-calc" onClick={calculate}>
+          <button type="button" className="btn-calc" onClick={doCalc}>
             Calculate
           </button>
 
           <div className="calc-results">
             <div className="calc-row">
-              <span>Interest (20%):</span>
-              <span>{interest !== null ? `P${interest}` : ""}</span>
+              <span>Interest(20%)</span>
+              <span>{result.interest && "P" + result.interest}</span>
             </div>
             <div className="calc-row">
-              <span>Monthly repayment:</span>
-              <span>{monthly !== null ? `P${monthly}` : ""}</span>
+              <span>Monthly repayment</span>
+              <span>{result.monthly && "P" + result.monthly}</span>
             </div>
             <div className="calc-row total-row">
-              <span>Total Repayment:</span>
-              <span>{total !== null ? `P${total}` : ""}</span>
+              <span>Total Repayment</span>
+              <span>{result.total && "P" + result.total}</span>
             </div>
           </div>
         </div>
 
-      </main>
+      </div>
     </div>
   );
 }
