@@ -8,6 +8,7 @@ import LoanApplication from "./pages/LoanApplication";
 import { AppProvider } from "./context/AppContext";
 import App from "./App";
 import Contributions from "./pages/Contributions";
+import Groups from "./pages/Groups";
 
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
           <Route path="/loans" element={<Loans />} />
           <Route path="/loans/apply" element={<LoanApplication />} />
           <Route path="/contributions" element={<Contributions />} />
+          <Route path="/groups" element={<Groups />} />
         </Route>
       </Routes>
     </BrowserRouter>
