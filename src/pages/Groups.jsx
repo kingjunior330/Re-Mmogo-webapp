@@ -1,51 +1,26 @@
 import { useState } from "react";
-import Sidebar from "../components/Sidebar";
-import Topbar from "../components/Topbar";
+import Sidebar from "../Components/Sidebar";
+import Topbar  from "../Components/Topbar";
+import Members from "../Components/Members";
 
 export default function Groups() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const [groups, setGroups] = useState([
-    { id: 1, name: "Dirang ke Pele", members: 8, pool: 48000 },
-    { id: 2, name: "Boitshoko Savers", members: 12, pool: 72000 },
-  ]);
-
-  const [selected, setSelected] = useState(null);
-
   return (
-    <div className="app">
+    <div style={{ background:"#FFFFFF", minHeight:"100vh", fontFamily:"Arial, sans-serif" }}>
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Topbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} title="Groups" />
+      <div style={{ padding:"20px 16px 80px" }}>
+        <Members />
+      </div>
 
-      <Sidebar open={sidebarOpen} />
-      <Topbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-
-      <h1>My Groups</h1>
-      <p>Manage your group members.</p>
-
-      {/* GROUP LIST */}
-      {groups.map(g => (
-        <div key={g.id} className="card" onClick={() => setSelected(g)}>
-          <h3>{g.name}</h3>
-          <p>P{g.pool}</p>
-          <p>{g.members} members</p>
-        </div>
-      ))}
-
-      {/* GROUP DETAILS */}
-      {selected && (
-        <div className="modal">
-          <div className="modal-content">
-
-            <button onClick={() => setSelected(null)}>X</button>
-
-            <h2>{selected.name}</h2>
-            <p>Members: {selected.members}</p>
-            <p>Pool: P{selected.pool}</p>
-
-            {/* ❌ NO REPORT BUTTON */}
-          </div>
-        </div>
-      )}
-
+      <div style={{
+        position:"fixed", bottom:0, left:0, right:0,
+        background:"#FFFFFF", borderTop:"1px solid #E0E0E0",
+        display:"flex", justifyContent:"space-around",
+        padding:"10px 0 12px", zIndex:50,
+      }}>
+      </div>
     </div>
   );
 }
