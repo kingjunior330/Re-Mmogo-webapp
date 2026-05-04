@@ -1,0 +1,10 @@
+Top bar baxkground color:  90BDF9
+Page background: white
+Add member box background color: 54D22E
+Add member text color: White
+Table background header color top box: 1976D2
+Background color for add member form :A2B1EE
+All the other text is black
+
+Corner radius : 10
+

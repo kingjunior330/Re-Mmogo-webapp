@@ -1,5 +1,4 @@
-import React from "react";
-import Contributions from "./components/Contributions";
+import Contributions from "../Components/contributions";
 
 
 const ContributionsPage = () => {

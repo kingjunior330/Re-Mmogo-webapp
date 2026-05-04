@@ -1,17 +1,21 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import MainLayout from "./layout/MainLayout";
-import Reports from "./pages/Reports";
+import Dashboard from "./pages/Dashboard";
+import Groups    from "./pages/Groups";
+import Loans     from "./pages/Loans";
+import Reports   from "./pages/Reports";
+import ContributionsPage from "./pages/contributions";
+import Home      from "./pages/Home";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-        </Route>
+        <Route path="/"        element={<Dashboard />} />
+        <Route path="/groups"  element={<Groups />}    />
+        <Route path="/loans"   element={<Loans />}     />
+        <Route path="/contributions" element={<ContributionsPage />} />
+        <Route path="/reports" element={<Reports />}   />
+        <Route path="/home"    element={<Home />}      />
       </Routes>
     </BrowserRouter>
   );
