@@ -1,50 +1,64 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
-import '../styles/design.css'
-import '../styles/Register.css'
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useApp } from "../context/AppContext";
+import "../styles/design.css";
+import "../styles/Register.css";
 
 export default function Register() {
-  const navigate = useNavigate()
-  const { register } = useApp()
+  const navigate = useNavigate();
+  const { register } = useApp();
 
-  const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirm, setConfirm] = useState('')
-  const [msg, setMsg] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleRegister(e) {
-    e.preventDefault()
+    e.preventDefault();
+    setMsg("");
+
     if (!fullName || !email || !phone || !password || !confirm) {
-      setMsg('Please fill in all fields'); return
+      setMsg("Please fill in all fields.");
+      return;
     }
-    if (!email.includes('@')) { setMsg('Enter a valid email'); return }
-    if (password.length < 6) { setMsg('Password must be at least 6 characters'); return }
-    if (password !== confirm) { setMsg('Passwords do not match'); return }
 
-    setLoading(true)
-    setMsg('')
+    if (!email.includes("@")) {
+      setMsg("Enter a valid email address.");
+      return;
+    }
 
-    const res = await register(fullName, email, phone, password)
+    if (password.length < 6) {
+      setMsg("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (password !== confirm) {
+      setMsg("Passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+
+    const res = await register(fullName, email, phone, password);
+
     if (res.ok) {
-      setMsg('success:Account created! Redirecting…')
-      setTimeout(() => navigate('/login'), 1500)
+      setMsg("success:Account created successfully. Redirecting...");
+      setTimeout(() => navigate("/login"), 1200);
     } else {
-      setMsg(res.data?.message || 'Could not register. Try again.')
+      setMsg(res.data.message || "Could not register. Try again.");
     }
-    setLoading(false)
+
+    setLoading(false);
   }
 
-  const isSuccess = msg.startsWith('success:')
-  const displayMsg = isSuccess ? msg.replace('success:', '') : msg
+  const isSuccess = msg.startsWith("success:");
+  const displayMsg = isSuccess ? msg.replace("success:", "") : msg;
 
   return (
     <div className="register-screen">
-
-      {/* pink header with background */}
       <div className="register-header">
         <div className="register-header-overlay">
           <div className="reg-brand">
@@ -54,57 +68,83 @@ export default function Register() {
         </div>
       </div>
 
-      {/* form card */}
       <div className="register-card">
         <h2 className="reg-title">Register</h2>
 
         <form onSubmit={handleRegister} className="reg-form">
-
           <div className="field-group">
             <label className="field-label">Full Name</label>
-            <input className="input-field" type="text" value={fullName}
-              onChange={e => setFullName(e.target.value)} placeholder="Full name" />
+            <input
+              className="input-field"
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Full name"
+            />
           </div>
 
           <div className="field-group">
             <label className="field-label">Email</label>
-            <input className="input-field" type="email" value={email}
-              onChange={e => setEmail(e.target.value)} placeholder="your@email.com" />
+            <input
+              className="input-field"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+            />
           </div>
 
           <div className="field-group">
             <label className="field-label">Phone Number</label>
-            <input className="input-field" type="tel" value={phone}
-              onChange={e => setPhone(e.target.value)} placeholder="+267 71 234 567" />
+            <input
+              className="input-field"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+267 71 234 567"
+            />
           </div>
 
           <div className="field-group">
             <label className="field-label">Password</label>
-            <input className="input-field" type="password" value={password}
-              onChange={e => setPassword(e.target.value)} placeholder="Min. 6 characters" />
+            <input
+              className="input-field"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Minimum 6 characters"
+            />
           </div>
 
           <div className="field-group">
             <label className="field-label">Confirm Password</label>
-            <input className="input-field" type="password" value={confirm}
-              onChange={e => setConfirm(e.target.value)} placeholder="Repeat password" />
+            <input
+              className="input-field"
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Repeat password"
+            />
           </div>
 
           {displayMsg && (
-            <p className={`form-msg ${isSuccess ? 'success' : 'error'}`}>{displayMsg}</p>
+            <p className={`form-msg ${isSuccess ? "success" : "error"}`}>
+              {displayMsg}
+            </p>
           )}
 
           <button type="submit" className="btn-reg" disabled={loading}>
-            {loading ? 'Creating account…' : 'Register'}
+            {loading ? "Creating account..." : "Register"}
           </button>
-
         </form>
 
         <p className="reg-login-link">
-          Already have an account?{' '}
-          <Link to="/login" className="link-blue">Log In</Link>
+          Already have an account?{" "}
+          <Link to="/login" className="link-blue">
+            Log In
+          </Link>
         </p>
       </div>
     </div>
-  )
+  );
 }

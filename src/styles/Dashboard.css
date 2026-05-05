@@ -1,0 +1,158 @@
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dash-welcome {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dash-welcome h2 {
+  font-size: 28px;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.dash-welcome p {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.dash-stats {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #1976d2, #64b5f6);
+  color: white;
+  padding: 22px;
+  border-radius: 18px;
+  box-shadow: 0 8px 20px rgba(25, 118, 210, 0.18);
+}
+
+.stat-card p {
+  font-size: 14px;
+  opacity: 0.95;
+  margin-bottom: 8px;
+}
+
+.stat-card h3 {
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.card {
+  background: white;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.section-title {
+  font-size: 20px;
+  color: #0f172a;
+  margin-bottom: 18px;
+}
+
+.progress-track {
+  width: 100%;
+  height: 16px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #16a34a, #4ade80);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.progress-note {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.quick-grid button {
+  background: #f8fafc;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  padding: 22px 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-grid button:hover {
+  background: #e3f2fd;
+  transform: translateY(-2px);
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.activity-row {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  background: #f8fafc;
+  padding: 14px;
+  border-radius: 12px;
+}
+
+.activity-row span {
+  font-size: 18px;
+}
+
+.activity-row p {
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.activity-row small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.empty-note {
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+  padding: 12px;
+}
+
+@media (min-width: 768px) {
+  .dash-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .quick-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

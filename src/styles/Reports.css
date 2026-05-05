@@ -1,0 +1,139 @@
+.reports-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.reports-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.rep-card {
+  padding: 22px;
+  border-radius: 18px;
+  color: white;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
+.rep-card p {
+  font-size: 14px;
+  opacity: 0.95;
+  margin-bottom: 8px;
+}
+
+.rep-card h2 {
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.rep-blue {
+  background: linear-gradient(135deg, #1976d2, #64b5f6);
+}
+
+.rep-green {
+  background: linear-gradient(135deg, #16a34a, #4ade80);
+}
+
+.rep-orange {
+  background: linear-gradient(135deg, #ea580c, #fb923c);
+}
+
+.rep-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.rep-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rep-table th,
+.rep-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.rep-table th {
+  background: #f1f5f9;
+  color: #334155;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.rep-table tr:hover {
+  background: #f8fafc;
+}
+
+.highlights-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.highlight-item {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 18px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #dbeafe;
+}
+
+.highlight-item span {
+  font-size: 34px;
+}
+
+.highlight-item p {
+  color: #64748b;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.highlight-item h4 {
+  color: #0f172a;
+  font-size: 18px;
+}
+
+.loading-card {
+  text-align: center;
+  color: #64748b;
+  padding: 30px;
+}
+
+.empty-note {
+  text-align: center;
+  color: #64748b;
+  padding: 18px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badge-approved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+@media (max-width: 900px) {
+  .reports-cards,
+  .highlights-grid {
+    grid-template-columns: 1fr;
+  }
+}

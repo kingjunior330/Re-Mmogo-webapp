@@ -1,87 +1,169 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import '../styles/design.css'
-import '../styles/Home.css'
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useApp } from "../context/AppContext";
+import "../styles/design.css";
+import "../styles/LoanApplication.css";
 
-export default function Home() {
+export default function LoanApplication() {
+  const navigate = useNavigate();
+  const { apiFetch } = useApp();
+
+  const [amount, setAmount] = useState("");
+  const [term, setTerm] = useState("");
+  const [purpose, setPurpose] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const interestRate = 20;
+
+  const interestAmount =
+    amount && term ? Number(amount) * (interestRate / 100) * Number(term) : 0;
+
+  const totalRepayment = amount ? Number(amount) + interestAmount : 0;
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setMsg("");
+
+    if (!amount || Number(amount) <= 0) {
+      setMsg("Enter a valid loan amount.");
+      return;
+    }
+
+    if (!term || Number(term) <= 0) {
+      setMsg("Enter a valid loan term.");
+      return;
+    }
+
+    if (!purpose.trim()) {
+      setMsg("Enter the loan purpose.");
+      return;
+    }
+
+    setLoading(true);
+
+    const res = await apiFetch("/loans", {
+      method: "POST",
+      body: JSON.stringify({
+        amount: Number(amount),
+        term: Number(term),
+        purpose: purpose.trim(),
+        dueDate,
+      }),
+    });
+
+    if (res.ok) {
+      setMsg("success:Loan application submitted. Awaiting approval.");
+      setTimeout(() => navigate("/loans"), 1000);
+    } else {
+      setMsg(res.data.message || "Could not submit loan application.");
+    }
+
+    setLoading(false);
+  }
+
+  const isSuccess = msg.startsWith("success:");
+
   return (
-    <div className="home-screen">
+    <div className="loan-app-page">
+      <div className="card">
+        <h3 className="section-title">Apply for a Loan</h3>
 
-      {/* hero section — full-bleed photo like Figma Landing page */}
-      <div className="home-hero">
-        <div className="hero-overlay">
-          <nav className="hero-nav">
-            <div className="hero-logo">
-              <span>👥</span>
-              <span>Re-Mmogo</span>
-            </div>
-            <div className="hero-nav-links">
-              <Link to="/login" className="hero-nav-link">Login</Link>
-              <Link to="/register" className="hero-nav-btn">Register</Link>
-            </div>
-          </nav>
+        <p className="loan-note">
+          Loans are charged at <strong>20% interest per month</strong> and must
+          be approved before release.
+        </p>
 
-          <div className="hero-body">
-            <h1 className="hero-heading">
-              Manage your Motshelo group the smart way
-            </h1>
-            <p className="hero-sub">
-              Track contributions, manage loans, and generate year-end reports — all in one place.
-            </p>
-            <div className="hero-actions">
-              <Link to="/register" className="hero-btn-primary">Get Started</Link>
-              <Link to="/login" className="hero-btn-ghost">Log In</Link>
-            </div>
+        <form onSubmit={handleSubmit} className="loan-application-form">
+          <div className="field-group">
+            <label className="field-label">Loan Amount (BWP)</label>
+            <input
+              className="input-field"
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Example: 4000"
+            />
           </div>
-        </div>
+
+          <div className="field-group">
+            <label className="field-label">Loan Term (Months)</label>
+            <input
+              className="input-field"
+              type="number"
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+              placeholder="Example: 2"
+            />
+          </div>
+
+          <div className="field-group">
+            <label className="field-label">Purpose</label>
+            <input
+              className="input-field"
+              type="text"
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
+              placeholder="Why do you need this loan?"
+            />
+          </div>
+
+          <div className="field-group">
+            <label className="field-label">Due Date</label>
+            <input
+              className="input-field"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+          </div>
+
+          {msg && (
+            <p className={`form-msg ${isSuccess ? "success" : "error"}`}>
+              {msg.replace("success:", "")}
+            </p>
+          )}
+
+          <div className="loan-actions">
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? "Submitting..." : "Submit Application"}
+            </button>
+
+            <button
+              type="button"
+              className="btn-cancel"
+              onClick={() => navigate("/loans")}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       </div>
 
-      {/* info strip */}
-      <div className="home-strip">
-        <span className="strip-icon">💵</span>
-        <p>
-          <strong>P1 000/month</strong> contributions · <strong>20%</strong> loan interest ·
-          <strong> P5 000</strong> year-end interest target
-        </p>
-      </div>
+      <div className="card calculator-card">
+        <h3 className="section-title">Loan Calculator</h3>
 
-      {/* features */}
-      <section className="home-features">
-        <div className="home-feat">
-          <div className="home-feat-icon">💵</div>
-          <h3>Contributions</h3>
-          <p>Members submit monthly payments, signatories approve them quickly and securely.</p>
+        <div className="calc-row">
+          <span>Amount Requested</span>
+          <strong>P{Number(amount || 0).toLocaleString()}</strong>
         </div>
-        <div className="home-feat">
-          <div className="home-feat-icon">💰</div>
-          <h3>Loans</h3>
-          <p>Apply for loans with 20% monthly interest. Dual signatory approval required.</p>
-        </div>
-        <div className="home-feat">
-          <div className="home-feat-icon">📈</div>
-          <h3>Reports</h3>
-          <p>Year-end reports show contributions, interest earned, and payout per member.</p>
-        </div>
-      </section>
 
-      {/* about strip */}
-      <div className="home-about">
-        <h2>Built for Botswana's motshelo culture</h2>
-        <p>
-          Re-Mmogo brings transparency and accountability to savings groups.
-          Join your group, track every pula, and grow together.
-        </p>
-        <div className="home-about-actions">
-          <Link to="/register" className="btn-primary" style={{ maxWidth: 220, margin: '0 auto' }}>
-            Create your group →
-          </Link>
+        <div className="calc-row">
+          <span>Interest Rate</span>
+          <strong>{interestRate}% per month</strong>
+        </div>
+
+        <div className="calc-row">
+          <span>Interest Amount</span>
+          <strong>P{interestAmount.toLocaleString()}</strong>
+        </div>
+
+        <div className="calc-row total-row">
+          <span>Total Repayment</span>
+          <strong>P{totalRepayment.toLocaleString()}</strong>
         </div>
       </div>
-
-      <footer className="home-footer">
-        <span>👥 Re-Mmogo</span>
-        <span>© 2026 · Built for motshelo groups in Botswana</span>
-      </footer>
     </div>
-  )
+  );
 }
