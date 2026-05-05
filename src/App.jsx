@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+<<<<<<< HEAD
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import MainLayout from "./layout/MainLayout";
@@ -10,10 +11,19 @@ import Contributions from "./pages/Contributions";
 import Groups from "./pages/Groups";
 import MembersPage from "./pages/members";
 import Settings from "./pages/Settings";
+=======
+import Dashboard from "./pages/Dashboard";
+import Groups    from "./pages/Groups";
+import Loans     from "./pages/Loans";
+import Reports   from "./pages/Reports";
+import ContributionsPage from "./pages/contributions";
+import Home      from "./pages/Home";
+>>>>>>> 0f4c486d5ef9116b6607bc75475090d7e1249489
 
 function App() {
   return (
     <BrowserRouter>
+<<<<<<< HEAD
       <AppProvider>
         <Routes>
           <Route element={<MainLayout />}>
@@ -29,6 +39,16 @@ function App() {
           </Route>
         </Routes>
       </AppProvider>
+=======
+      <Routes>
+        <Route path="/"        element={<Dashboard />} />
+        <Route path="/groups"  element={<Groups />}    />
+        <Route path="/loans"   element={<Loans />}     />
+        <Route path="/contributions" element={<ContributionsPage />} />
+        <Route path="/reports" element={<Reports />}   />
+        <Route path="/home"    element={<Home />}      />
+      </Routes>
+>>>>>>> 0f4c486d5ef9116b6607bc75475090d7e1249489
     </BrowserRouter>
   );
 }

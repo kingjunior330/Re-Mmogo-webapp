@@ -1,7 +1,11 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
 import '../styles/design.css'
 import '../styles/Contributions.css'
+=======
+import Contributions from "../Components/contributions";
+>>>>>>> 0f4c486d5ef9116b6607bc75475090d7e1249489
 
 const MONTHS = ['January','February','March','April','May','June',
   'July','August','September','October','November','December']
@@ -14,6 +18,7 @@ function fmtMonth(val) {
   return MONTHS[d.getMonth()] + ' ' + d.getFullYear()
 }
 
+<<<<<<< HEAD
 export default function Contributions() {
   const { contributions, fetchContributions, apiFetch } = useApp()
 
@@ -137,3 +142,6 @@ export default function Contributions() {
     </div>
   )
 }
+=======
+export default ContributionsPage;
+>>>>>>> 0f4c486d5ef9116b6607bc75475090d7e1249489

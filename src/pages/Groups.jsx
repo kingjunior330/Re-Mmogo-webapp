@@ -1,11 +1,19 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
 import '../styles/design.css'
 import '../styles/Groups.css'
+=======
+import { useState } from "react";
+import Sidebar from "../Components/Sidebar";
+import Topbar  from "../Components/Topbar";
+import Members from "../Components/Members";
+>>>>>>> 0f4c486d5ef9116b6607bc75475090d7e1249489
 
 export default function Groups() {
   const { user, members, fetchMembers, apiFetch } = useApp()
 
+<<<<<<< HEAD
   const [showForm, setShowForm] = useState(false)
   const [email, setEmail] = useState('')
   const [role, setRole] = useState('member')
@@ -123,8 +131,23 @@ export default function Groups() {
             </tbody>
           </table>
         </div>
+=======
+  return (
+    <div style={{ background:"#FFFFFF", minHeight:"100vh", fontFamily:"Arial, sans-serif" }}>
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Topbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} title="Groups" />
+      <div style={{ padding:"20px 16px 80px" }}>
+        <Members />
+>>>>>>> 0f4c486d5ef9116b6607bc75475090d7e1249489
       </div>
 
+      <div style={{
+        position:"fixed", bottom:0, left:0, right:0,
+        background:"#FFFFFF", borderTop:"1px solid #E0E0E0",
+        display:"flex", justifyContent:"space-around",
+        padding:"10px 0 12px", zIndex:50,
+      }}>
+      </div>
     </div>
   )
 }

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React from 'react'
 import { Link } from 'react-router-dom'
 import '../styles/design.css'
@@ -85,3 +86,12 @@ export default function Home() {
     </div>
   )
 }
+=======
+export default function Home() {
+  return (
+    <div style={{ padding:"20px", fontFamily:"Arial, sans-serif" }}>
+      <h1>Home Page</h1>
+    </div>
+  );
+} 
+>>>>>>> 0f4c486d5ef9116b6607bc75475090d7e1249489
