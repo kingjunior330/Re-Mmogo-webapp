@@ -1,5 +1,5 @@
 -- Use the database
-USE defaultdb;
+USE railway;
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (

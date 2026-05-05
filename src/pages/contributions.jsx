@@ -1,164 +1,147 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useApp } from "../context/AppContext";
-import "../styles/Contributions.css";
+<<<<<<< HEAD
+import React, { useState, useEffect } from 'react'
+import { useApp } from '../context/AppContext'
+import '../styles/design.css'
+import '../styles/Contributions.css'
+=======
+import Contributions from "../Components/contributions";
+>>>>>>> 0f4c486d5ef9116b6607bc75475090d7e1249489
 
-function Contributions() {
+const MONTHS = ['January','February','March','April','May','June',
+  'July','August','September','October','November','December']
 
-  const navigate = useNavigate();
-  const { contributions, addContribution } = useApp();
+// format date string to month name for display
+function fmtMonth(val) {
+  if (!val) return '—'
+  const d = new Date(val)
+  if (isNaN(d.getTime())) return val
+  return MONTHS[d.getMonth()] + ' ' + d.getFullYear()
+}
 
-  //form state
-  const [amount, setAmount] = useState("");
-  const [month, setMonth] = useState("");
-  const [proof, setProof] = useState("");
-  const [msg, setMsg] = useState("");
-  const [loading, setLoading] = useState(false);
+<<<<<<< HEAD
+export default function Contributions() {
+  const { contributions, fetchContributions, apiFetch } = useApp()
 
+  const yr = new Date().getFullYear()
+  const [amount, setAmount] = useState('1000')
+  const [month, setMonth] = useState('')
+  const [proof, setProof] = useState('')
+  const [msg, setMsg] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  //my contributions only - filter out others
-  const myContributions = contributions.filter((c) => c.member === "Me");
+  useEffect(() => { fetchContributions(true) }, [])
 
+  const totalPaid = contributions
+    .filter(c => c.status === 'approved')
+    .reduce((s, c) => s + Number(c.amount), 0)
 
-  //work out how much they've paid in total (approved only)
-  const totalPaid = myContributions
-    .filter((c) => c.status === "Approved")
-    .reduce((sum, c) => sum + c.amount, 0);
-
-
-  function handleSubmit(e) {
-    e.preventDefault();
-
-    if (amount === "" || month === "") {
-      setMsg("Please fill in amount and month");
-      return;
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!month) { setMsg('Please select a month'); return }
+    if (!amount || Number(amount) <= 0) { setMsg('Enter a valid amount'); return }
+    setLoading(true); setMsg('')
+    const { ok, data } = await apiFetch('/contributions', {
+      method: 'POST',
+      body: JSON.stringify({ amount: Number(amount), monthYear: month, paymentReference: proof })
+    })
+    if (ok) {
+      setMsg('success:Contribution submitted! Awaiting approval.')
+      setAmount('1000'); setMonth(''); setProof('')
+      fetchContributions(true)
+    } else {
+      setMsg(data.message || 'Could not submit contribution')
     }
-
-    if (Number(amount) <= 0) {
-      setMsg("Amount must be more than 0");
-      return;
-    }
-
-    //rule says P1000 per month, warn if they're paying something weird
-    if (Number(amount) !== 1000) {
-      let ok = window.confirm("The monthly contribution is P1000. Are you sure you want to pay P" + amount + "?");
-      if (!ok) return;
-    }
-
-    setLoading(true);
-
-    //today's date for the record
-    const today = new Date();
-    const dateStr = today.getDate() + "/" + (today.getMonth() + 1) + "/" + today.getFullYear();
-
-    addContribution({
-      amount: Number(amount),
-      member: "Me",
-      date: dateStr,
-      month: month,
-      proof: proof
-    });
-
-    setMsg("Contribution recorded. Waiting for approval.");
-
-    //clear form
-    setAmount("");
-    setMonth("");
-    setProof("");
-
-    setLoading(false);
+    setLoading(false)
   }
 
+  const isSuccess = msg.startsWith('success:')
 
   return (
     <div className="contrib-page">
 
-      <div className="topbar">
-        <button className="menu-btn">&#9776;</button>
-        <h2>💵 Contributions</h2>
+      {/* summary */}
+      <div className="card contrib-summary">
+        <p className="contrib-sum-label">Total Contributed This Year</p>
+        <p className="contrib-sum-amount">P{totalPaid.toLocaleString()}.00</p>
+        <p className="contrib-sum-sub">{contributions.filter(c => c.status === 'approved').length} approved payments</p>
       </div>
 
-      <div className="content">
-
-        <p className="intro">Record your monthly contribution to the motshelo.</p>
-
-
-        {/* summary card */}
-        <div className="summary-card">
-          <p className="summary-label">Total contributed this year</p>
-          <p className="summary-amount">P{totalPaid.toLocaleString()}.00</p>
-        </div>
-
+      {/* form card */}
+      <div className="card">
+        <h3 className="section-title">Record New Contribution</h3>
 
         <form onSubmit={handleSubmit} className="contrib-form">
+          <div className="contrib-form-grid">
+            <div className="field-group">
+              <label className="field-label">Amount (BWP)</label>
+              <input className="input-field" type="number" value={amount}
+                onChange={e => setAmount(e.target.value)} placeholder="1000" />
+            </div>
 
-          <h4>Record New Contribution</h4>
+            <div className="field-group">
+              <label className="field-label">Month</label>
+              <select className="input-field" value={month} onChange={e => setMonth(e.target.value)}>
+                <option value="">Select month</option>
+                {MONTHS.map((m, i) => {
+                  const val = yr + '-' + String(i + 1).padStart(2, '0') + '-01'
+                  return <option key={m} value={val}>{m} {yr}</option>
+                })}
+              </select>
+            </div>
+          </div>
 
-          <label>Amount (BWP)</label>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="1000"
-          />
+          <div className="field-group">
+            <label className="field-label">Payment Reference (optional)</label>
+            <input className="input-field" type="text" value={proof}
+              onChange={e => setProof(e.target.value)} placeholder="Payment reference" />
+          </div>
 
-          <label>Month</label>
-          <select value={month} onChange={(e) => setMonth(e.target.value)}>
-            <option value="">-- select month --</option>
-            <option value="January">January</option>
-            <option value="February">February</option>
-            <option value="March">March</option>
-            <option value="April">April</option>
-            <option value="May">May</option>
-            <option value="June">June</option>
-            <option value="July">July</option>
-            <option value="August">August</option>
-            <option value="September">September</option>
-            <option value="October">October</option>
-            <option value="November">November</option>
-            <option value="December">December</option>
-          </select>
-
-          <label>Proof of payment (reference number)</label>
-          <input
-            type="text"
-            value={proof}
-            onChange={(e) => setProof(e.target.value)}
-            placeholder="e.g FNB reference 123456"
-          />
-
-          <button type="submit" className="btn-submit" disabled={loading}>
-            {loading ? "Recording..." : "Record Contribution"}
-          </button>
-
-          {msg && <p className="form-msg">{msg}</p>}
-        </form>
-
-
-        {/* my history */}
-        <div className="history-box">
-          <h4>My Contributions</h4>
-
-          {myContributions.length === 0 ? (
-            <p className="empty-msg">No contributions recorded yet.</p>
-          ) : (
-            myContributions.map((c) => (
-              <div className="history-item" key={c.id}>
-                <div>
-                  <p className="hist-main">{c.month || c.date} - P{c.amount}</p>
-                  {c.proof && <p className="hist-ref">Ref: {c.proof}</p>}
-                </div>
-                <span className={"status-tag " + c.status.toLowerCase()}>
-                  {c.status}
-                </span>
-              </div>
-            ))
+          {msg && (
+            <p className={`form-msg ${isSuccess ? 'success' : 'error'}`}>
+              {msg.replace('success:', '')}
+            </p>
           )}
-        </div>
 
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Submitting…' : 'Submit Contribution'}
+          </button>
+        </form>
       </div>
-    </div>
-  );
-}
 
-export default Contributions;
+      {/* history table */}
+      <div className="card">
+        <h3 className="section-title">My Contributions</h3>
+        {contributions.length === 0 ? (
+          <p className="empty-note">No contributions yet.</p>
+        ) : (
+          <div className="contrib-table-wrap">
+            <table className="contrib-table">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Amount</th>
+                  <th>Reference</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contributions.map(c => (
+                  <tr key={c.id}>
+                    <td>{fmtMonth(c.monthYear || c.month_year)}</td>
+                    <td>P{Number(c.amount).toLocaleString()}</td>
+                    <td className="ref-td">{c.paymentReference || c.payment_reference || '—'}</td>
+                    <td><span className={`badge badge-${c.status}`}>{c.status}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+    </div>
+  )
+}
+=======
+export default ContributionsPage;
+>>>>>>> 0f4c486d5ef9116b6607bc75475090d7e1249489

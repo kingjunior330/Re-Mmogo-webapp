@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* reset — let design.css handle everything */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -8,14 +9,30 @@ body {
   font-size: 14px;
   line-height: 1.5;
   min-height: 100vh;
+=======
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #ffffff;
+  color: #000000;
+>>>>>>> f8828384eaa37a4ccabb783f968ec70a9f35a7af
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
+<<<<<<< HEAD
   display: flex;
   flex-direction: column;
 }
 
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; font-family: inherit; }
+=======
+}
+>>>>>>> f8828384eaa37a4ccabb783f968ec70a9f35a7af

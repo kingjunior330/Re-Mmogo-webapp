@@ -1,197 +1,153 @@
-import React, { useState } from "react";
-import { useApp } from "../context/AppContext";
-import "../styles/Groups.css";
+<<<<<<< HEAD
+import React, { useState, useEffect } from 'react'
+import { useApp } from '../context/AppContext'
+import '../styles/design.css'
+import '../styles/Groups.css'
+=======
+import { useState } from "react";
+import Sidebar from "../Components/Sidebar";
+import Topbar  from "../Components/Topbar";
+import Members from "../Components/Members";
+>>>>>>> 0f4c486d5ef9116b6607bc75475090d7e1249489
 
-function Groups() {
+export default function Groups() {
+  const { user, members, fetchMembers, apiFetch } = useApp()
 
-  const { memberRequests, addMemberRequest } = useApp();
+<<<<<<< HEAD
+  const [showForm, setShowForm] = useState(false)
+  const [email, setEmail] = useState('')
+  const [role, setRole] = useState('member')
+  const [msg, setMsg] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  //show form or the table
-  const [showForm, setShowForm] = useState(false);
+  useEffect(() => { fetchMembers() }, [])
 
-  //form fields
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("");
-
-  const [msg, setMsg] = useState("");
-
-
-  //starter member - the group creator, so table isnt empty
-  const defaultMembers = [
-    { id: 0, name: "T.Woza", email: "twoza@mail.com", role: "Chair", status: "Active" }
-  ];
-
-  //combine default + added members
-  const allMembers = [...defaultMembers, ...memberRequests];
-
-
-  function handleAdd(e) {
-    e.preventDefault();
-
-    if (fullName === "" || email === "" || role === "") {
-      setMsg("Please fill in all the fields");
-      return;
+  async function handleAdd(e) {
+    e.preventDefault()
+    if (!email) { setMsg('Enter an email address'); return }
+    setLoading(true)
+    const { ok, data } = await apiFetch('/members', {
+      method: 'POST',
+      body: JSON.stringify({ email, role })
+    })
+    if (ok) {
+      setMsg('success:Member added!')
+      setEmail(''); setRole('member')
+      fetchMembers()
+      setTimeout(() => { setShowForm(false); setMsg('') }, 1200)
+    } else {
+      setMsg(data.message || 'Could not add member')
     }
-
-    //simple email check
-    if (!email.includes("@")) {
-      setMsg("Enter a valid email address");
-      return;
-    }
-
-    addMemberRequest({
-      name: fullName,
-      email: email,
-      role: role
-    });
-
-    //clear and go back to table
-    setFullName("");
-    setEmail("");
-    setRole("");
-    setMsg("");
-    setShowForm(false);
+    setLoading(false)
   }
 
-
-  function openForm() {
-    setShowForm(true);
-    setMsg("");
-  }
-
-  function cancelForm() {
-    setShowForm(false);
-    setMsg("");
-    setFullName("");
-    setEmail("");
-    setRole("");
-  }
-
-
-  //email cell needs to wrap nicely - some emails are long
-  function shortEmail(e) {
-    if (e.length > 10) {
-      return e.substring(0, 10) + "...";
-    }
-    return e;
-  }
-
+  const groupCode = user?.groupCode || '—'
+  const groupName = user?.groupName || 'My Group'
 
   return (
     <div className="groups-page">
 
-      <div className="topbar">
-        <button className="menu-btn">&#9776;</button>
-        <h2>👥 Groups</h2>
+      {/* group info card */}
+      <div className="card group-info-card">
+        <div className="group-info-row">
+          <div>
+            <p className="group-info-label">Group Name</p>
+            <p className="group-info-value">{groupName}</p>
+          </div>
+          <div>
+            <p className="group-info-label">Invite Code</p>
+            <p className="group-code">{groupCode}</p>
+          </div>
+          <div>
+            <p className="group-info-label">Members</p>
+            <p className="group-info-value">{members.length}</p>
+          </div>
+        </div>
+        <p className="group-hint">Share the invite code with new members so they can join.</p>
       </div>
 
-
-      {!showForm ? (
-        //---- MAIN VIEW: member table ----
-        <div className="content">
-
-          <p className="intro">Manage your group members and their roles.</p>
-
-          <button className="btn-add" onClick={openForm}>
-            + Add member
-          </button>
-
-          <div className="members-table-wrap">
-            <table className="members-table">
-              <thead>
-                <tr>
-                  <th>Member</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allMembers.map((m) => (
-                  <tr key={m.id}>
-                    <td>{m.name}</td>
-                    <td className="email-cell">{shortEmail(m.email)}</td>
-                    <td>{m.role}</td>
-                    <td>
-                      {m.status === "Active" || m.status === "Approved" ? (
-                        <span className="check">✅</span>
-                      ) : (
-                        <span className="pending-dot">⏳</span>
-                      )}
-                    </td>
-                    <td className="actions-cell">⋮</td>
-                  </tr>
-                ))}
-
-                {/*empty rows to fill the table like the figma*/}
-                {allMembers.length < 5 && (
-                  <>
-                    {Array.from({ length: 5 - allMembers.length }).map((_, i) => (
-                      <tr key={"empty-" + i}>
-                        <td>&nbsp;</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                      </tr>
-                    ))}
-                  </>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-        </div>
-      ) : (
-        //---- ADD MEMBER FORM VIEW ----
-        <div className="content form-bg">
-
-          <p className="intro">Manage your group members and their roles.</p>
-
-          <form onSubmit={handleAdd} className="add-form">
-
-            <h4 className="form-title">👥 Add New Member</h4>
-
-            <label>Full Name</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-            />
-
-            <label>Email Address</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-
-            <label>Role</label>
-            <input
-              type="text"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              placeholder="e.g Treasurer, Secretary, Member"
-            />
-
-            {msg && <p className="form-msg">{msg}</p>}
-
-            <button type="submit" className="btn-add-member">
-              +Add Member
+      {/* member table */}
+      <div className="card">
+        <div className="members-header">
+          <h3 className="section-title" style={{ margin: 0 }}>Members</h3>
+          {(user?.role === 'admin' || user?.role === 'signatory') && (
+            <button className="btn-add-member" onClick={() => { setShowForm(!showForm); setMsg('') }}>
+              {showForm ? '✕ Cancel' : '+ Add Member'}
             </button>
+          )}
+        </div>
 
-            <button type="button" className="btn-cancel" onClick={cancelForm}>
-              Cancel
+        {/* add member form */}
+        {showForm && (
+          <form onSubmit={handleAdd} className="add-member-form">
+            <div className="field-group">
+              <label className="field-label">Member Email</label>
+              <input className="input-field" type="email" value={email}
+                onChange={e => setEmail(e.target.value)} placeholder="member@email.com" />
+            </div>
+            <div className="field-group">
+              <label className="field-label">Role</label>
+              <select className="input-field" value={role} onChange={e => setRole(e.target.value)}>
+                <option value="member">Member</option>
+                <option value="signatory">Signatory</option>
+              </select>
+            </div>
+            {msg && (
+              <p className={`form-msg ${msg.startsWith('success') ? 'success' : 'error'}`}>
+                {msg.replace('success:', '')}
+              </p>
+            )}
+            <button type="submit" className="btn-primary" style={{ marginTop: 8 }} disabled={loading}>
+              {loading ? 'Adding…' : 'Add Member'}
             </button>
           </form>
+        )}
+
+        {/* table */}
+        <div className="members-table-wrap">
+          <table className="members-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {members.length === 0 && (
+                <tr><td colSpan={5} className="empty-cell">No members yet</td></tr>
+              )}
+              {members.map((m, i) => (
+                <tr key={m.id || i}>
+                  <td>{i + 1}</td>
+                  <td>{m.fullName || m.name || '—'}</td>
+                  <td className="email-td">{m.email}</td>
+                  <td><span className={`badge badge-${m.role}`}>{m.role}</span></td>
+                  <td><span className="badge badge-approved">Active</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      )}
+=======
+  return (
+    <div style={{ background:"#FFFFFF", minHeight:"100vh", fontFamily:"Arial, sans-serif" }}>
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Topbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} title="Groups" />
+      <div style={{ padding:"20px 16px 80px" }}>
+        <Members />
+>>>>>>> 0f4c486d5ef9116b6607bc75475090d7e1249489
+      </div>
 
-      <div className="footer-icon">👥</div>
+      <div style={{
+        position:"fixed", bottom:0, left:0, right:0,
+        background:"#FFFFFF", borderTop:"1px solid #E0E0E0",
+        display:"flex", justifyContent:"space-around",
+        padding:"10px 0 12px", zIndex:50,
+      }}>
+      </div>
     </div>
-  );
+  )
 }
-
-export default Groups;
