@@ -1,177 +1,87 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useApp } from "../context/AppContext";
-import "../styles/LoanApplication.css";
+import React from 'react'
+import { Link } from 'react-router-dom'
+import '../styles/design.css'
+import '../styles/Home.css'
 
-function LoanApplication() {
-
-  const navigate = useNavigate();
-  const { addLoan } = useApp();
-
-  const [amount, setAmount] = useState("");
-  const [term, setTerm] = useState('');
-  const [reason, setReason] = useState("");
-
-  const [msg, setMsg] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  //calculator
-  const [calcAmt, setCalcAmt] = useState("");
-  const [calcTerm, setCalcTerm] = useState("");
-  const [result, setResult] = useState({ interest: "", monthly: "", total: "" });
-
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (amount === "" || term === "" || reason === "") {
-      setMsg("Please fill in all the fields");
-      return;
-    }
-
-    if (Number(amount) <= 0) {
-      setMsg("Enter a valid amount");
-      return;
-    }
-
-    setLoading(true);
-
-    //work out due date based on term (assume term is in months)
-    let months = parseInt(term);
-    if (isNaN(months)) months = 6; //default if they wrote weird stuff
-
-    const due = new Date();
-    due.setMonth(due.getMonth() + months);
-    const dueStr = due.getDate() + "/" + (due.getMonth() + 1) + "/" + due.getFullYear();
-
-    //push to context
-    addLoan({
-      amount: Number(amount),
-      term: term,
-      reason: reason,
-      member: "Me",
-      dueDate: dueStr
-    });
-
-    setMsg("Submitted! Waiting for signatory approval.");
-
-    setTimeout(() => {
-      navigate("/loans");
-    }, 1200);
-
-    setLoading(false);
-  }
-
-
-  function doCalc() {
-    let p = Number(calcAmt);
-    let m = Number(calcTerm);
-
-    if (!p || !m) return;
-
-    let intr = p * 0.2 * m;
-    let tot = p + intr;
-    let perMonth = tot / m;
-
-    setResult({
-      interest: intr.toFixed(2),
-      monthly: perMonth.toFixed(2),
-      total: tot.toFixed(2)
-    });
-  }
-
-
+export default function Home() {
   return (
-    <div className="loan-app-page">
+    <div className="home-screen">
 
-      <div className="topbar">
-        <button className="menu-btn">&#9776;</button>
-        <h2>📝 Loans Application</h2>
-      </div>
-
-      <div className="content">
-
-        <p className="intro">Apply for loans and track your repayments.</p>
-
-        <form onSubmit={handleSubmit} className="apply-form">
-
-          <label>Amount (BWP)</label>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-
-          <label>Term</label>
-          <input
-            type="text"
-            placeholder="e.g 6 months"
-            value={term}
-            onChange={(e) => setTerm(e.target.value)}
-          />
-
-          <label>Reason for Loan</label>
-          <input
-            type="text"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-          />
-
-          <p className="note">
-            Note: your loan will be reviewed by group signatories shortly.
-            You'll be notified if approved.
-          </p>
-
-          <button type="submit" className="btn-submit" disabled={loading}>
-            {loading ? "Submitting..." : "Submit Application"}
-          </button>
-
-          {msg && <p className="form-msg">{msg}</p>}
-        </form>
-
-
-        <div className="calculator">
-          <h4>Loan Interest Calculator</h4>
-
-          <label>Loan Amount</label>
-          <input
-            type="number"
-            value={calcAmt}
-            onChange={(e) => setCalcAmt(e.target.value)}
-            placeholder="100"
-          />
-
-          <label>Term</label>
-          <input
-            type="text"
-            value={calcTerm}
-            onChange={(e) => setCalcTerm(e.target.value)}
-            placeholder="e.g 6 months"
-          />
-
-          <button type="button" className="btn-calc" onClick={doCalc}>
-            Calculate
-          </button>
-
-          <div className="calc-results">
-            <div className="calc-row">
-              <span>Interest(20%)</span>
-              <span>{result.interest && "P" + result.interest}</span>
+      {/* hero section — full-bleed photo like Figma Landing page */}
+      <div className="home-hero">
+        <div className="hero-overlay">
+          <nav className="hero-nav">
+            <div className="hero-logo">
+              <span>👥</span>
+              <span>Re-Mmogo</span>
             </div>
-            <div className="calc-row">
-              <span>Monthly repayment</span>
-              <span>{result.monthly && "P" + result.monthly}</span>
+            <div className="hero-nav-links">
+              <Link to="/login" className="hero-nav-link">Login</Link>
+              <Link to="/register" className="hero-nav-btn">Register</Link>
             </div>
-            <div className="calc-row total-row">
-              <span>Total Repayment</span>
-              <span>{result.total && "P" + result.total}</span>
+          </nav>
+
+          <div className="hero-body">
+            <h1 className="hero-heading">
+              Manage your Motshelo group the smart way
+            </h1>
+            <p className="hero-sub">
+              Track contributions, manage loans, and generate year-end reports — all in one place.
+            </p>
+            <div className="hero-actions">
+              <Link to="/register" className="hero-btn-primary">Get Started</Link>
+              <Link to="/login" className="hero-btn-ghost">Log In</Link>
             </div>
           </div>
         </div>
-
       </div>
-    </div>
-  );
-}
 
-export default LoanApplication;
+      {/* info strip */}
+      <div className="home-strip">
+        <span className="strip-icon">💵</span>
+        <p>
+          <strong>P1 000/month</strong> contributions · <strong>20%</strong> loan interest ·
+          <strong> P5 000</strong> year-end interest target
+        </p>
+      </div>
+
+      {/* features */}
+      <section className="home-features">
+        <div className="home-feat">
+          <div className="home-feat-icon">💵</div>
+          <h3>Contributions</h3>
+          <p>Members submit monthly payments, signatories approve them quickly and securely.</p>
+        </div>
+        <div className="home-feat">
+          <div className="home-feat-icon">💰</div>
+          <h3>Loans</h3>
+          <p>Apply for loans with 20% monthly interest. Dual signatory approval required.</p>
+        </div>
+        <div className="home-feat">
+          <div className="home-feat-icon">📈</div>
+          <h3>Reports</h3>
+          <p>Year-end reports show contributions, interest earned, and payout per member.</p>
+        </div>
+      </section>
+
+      {/* about strip */}
+      <div className="home-about">
+        <h2>Built for Botswana's motshelo culture</h2>
+        <p>
+          Re-Mmogo brings transparency and accountability to savings groups.
+          Join your group, track every pula, and grow together.
+        </p>
+        <div className="home-about-actions">
+          <Link to="/register" className="btn-primary" style={{ maxWidth: 220, margin: '0 auto' }}>
+            Create your group →
+          </Link>
+        </div>
+      </div>
+
+      <footer className="home-footer">
+        <span>👥 Re-Mmogo</span>
+        <span>© 2026 · Built for motshelo groups in Botswana</span>
+      </footer>
+    </div>
+  )
+}

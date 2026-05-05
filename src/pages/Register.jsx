@@ -1,141 +1,110 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import "../styles/Register.css";
+import React, { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
+import '../styles/design.css'
+import '../styles/Register.css'
 
-function Register() {
+export default function Register() {
+  const navigate = useNavigate()
+  const { register } = useApp()
 
-  const navigate = useNavigate();
-
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-
-  const [msg, setMsg] = useState("");
-  const [loading, setLoading] = useState(false);
-
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [msg, setMsg] = useState('')
+  const [loading, setLoading] = useState(false)
 
   async function handleRegister(e) {
-    e.preventDefault();
-
-    //check all fields
-    if (!fullName || !email || !password || !confirm) {
-      setMsg("Please fill in all fields");
-      return;
+    e.preventDefault()
+    if (!fullName || !email || !phone || !password || !confirm) {
+      setMsg('Please fill in all fields'); return
     }
+    if (!email.includes('@')) { setMsg('Enter a valid email'); return }
+    if (password.length < 6) { setMsg('Password must be at least 6 characters'); return }
+    if (password !== confirm) { setMsg('Passwords do not match'); return }
 
-    if (!email.includes("@")) {
-      setMsg("Enter a valid email");
-      return;
+    setLoading(true)
+    setMsg('')
+
+    const res = await register(fullName, email, phone, password)
+    if (res.ok) {
+      setMsg('success:Account created! Redirecting…')
+      setTimeout(() => navigate('/login'), 1500)
+    } else {
+      setMsg(res.data?.message || 'Could not register. Try again.')
     }
-
-    if (password.length < 6) {
-      setMsg("Password must be at least 6 characters");
-      return;
-    }
-
-    if (password !== confirm) {
-      setMsg("Passwords do not match");
-      return;
-    }
-
-    setLoading(true);
-    setMsg("");
-
-    try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: fullName,
-          email: email,
-          password: password
-        })
-      });
-
-      const data = await res.json();
-      console.log(data);
-
-      if (res.ok) {
-        setMsg("Account created! Redirecting...");
-        setTimeout(() => navigate("/login"), 1500);
-      } else {
-        setMsg(data.error || "Could not register. Try again.");
-      }
-
-    } catch (err) {
-      console.log(err);
-      //for demo, even if backend is down, pretend it worked
-      setMsg("Account created! Redirecting...");
-      setTimeout(() => navigate("/login"), 1500);
-    }
-
-    setLoading(false);
+    setLoading(false)
   }
 
+  const isSuccess = msg.startsWith('success:')
+  const displayMsg = isSuccess ? msg.replace('success:', '') : msg
 
   return (
-    <div className="register-page">
+    <div className="register-screen">
 
-      <div className="topbar">
-        <span className="topbar-logo">Re-Mmogo</span>
-        <span className="topbar-icon">👥</span>
+      {/* pink header with background */}
+      <div className="register-header">
+        <div className="register-header-overlay">
+          <div className="reg-brand">
+            <span>👥</span>
+            <span>Re-Mmogo</span>
+          </div>
+        </div>
       </div>
 
-      <div className="register-wrap">
+      {/* form card */}
+      <div className="register-card">
+        <h2 className="reg-title">Register</h2>
 
-        <div className="register-card">
+        <form onSubmit={handleRegister} className="reg-form">
 
-          <div className="card-head">
-            <h3>Register</h3>
-            <span className="close-x">×</span>
+          <div className="field-group">
+            <label className="field-label">Full Name</label>
+            <input className="input-field" type="text" value={fullName}
+              onChange={e => setFullName(e.target.value)} placeholder="Full name" />
           </div>
 
-          <form onSubmit={handleRegister} className="register-form">
+          <div className="field-group">
+            <label className="field-label">Email</label>
+            <input className="input-field" type="email" value={email}
+              onChange={e => setEmail(e.target.value)} placeholder="your@email.com" />
+          </div>
 
-            <label>Full name</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-            />
+          <div className="field-group">
+            <label className="field-label">Phone Number</label>
+            <input className="input-field" type="tel" value={phone}
+              onChange={e => setPhone(e.target.value)} placeholder="+267 71 234 567" />
+          </div>
 
-            <label>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+          <div className="field-group">
+            <label className="field-label">Password</label>
+            <input className="input-field" type="password" value={password}
+              onChange={e => setPassword(e.target.value)} placeholder="Min. 6 characters" />
+          </div>
 
-            <label>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+          <div className="field-group">
+            <label className="field-label">Confirm Password</label>
+            <input className="input-field" type="password" value={confirm}
+              onChange={e => setConfirm(e.target.value)} placeholder="Repeat password" />
+          </div>
 
-            <label>Confirm password</label>
-            <input
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-            />
+          {displayMsg && (
+            <p className={`form-msg ${isSuccess ? 'success' : 'error'}`}>{displayMsg}</p>
+          )}
 
-            {msg && <p className="form-msg">{msg}</p>}
+          <button type="submit" className="btn-reg" disabled={loading}>
+            {loading ? 'Creating account…' : 'Register'}
+          </button>
 
-            <button type="submit" className="btn-register" disabled={loading}>
-              {loading ? "Registering..." : "Register"}
-            </button>
+        </form>
 
-            <p className="login-link">
-              Already have an account? <Link to="/login">Log In</Link>
-            </p>
-          </form>
-        </div>
-
+        <p className="reg-login-link">
+          Already have an account?{' '}
+          <Link to="/login" className="link-blue">Log In</Link>
+        </p>
       </div>
     </div>
-  );
+  )
 }
-
-export default Register;

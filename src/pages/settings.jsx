@@ -1,100 +1,157 @@
-import { useState } from 'react';
-import SettingRow from './SettingRow';
+import { useState } from 'react'
+import { useApp } from '../context/AppContext'
+import '../styles/design.css'
+import '../styles/Settings.css'
 
 export default function Settings() {
-  // MY PROFILE
-  const [name, setName] = useState('Thabo Mokena');
-  const [email, setEmail] = useState('thabo@gmail.com');
-  const [role, setRole] = useState('Signatory');
+  const { user, apiFetch, logout } = useApp()
 
-  // GROUP SETTINGS
-  const [groupName, setGroupName] = useState('Motshelo Savings');
-  const [totalMembers, setTotalMembers] = useState(12);
+  const [name, setName] = useState(user?.fullName || '')
+  const [phone, setPhone] = useState(user?.phone || '')
+  const [oldPass, setOldPass] = useState('')
+  const [newPass, setNewPass] = useState('')
+  const [msg, setMsg] = useState('')
+  const [msgType, setMsgType] = useState('success')
+  const [saving, setSaving] = useState(false)
 
-  // CONTRIBUTION SETTINGS
-  const [monthlyAmount, setMonthlyAmount] = useState(1000);
-  const [dueDate, setDueDate] = useState('1st of every month');
-  const [paymentReminder, setPaymentReminder] = useState('3 days before due date');
+  // flash a message then clear it
+  function flash(text, type = 'success') {
+    setMsg(text)
+    setMsgType(type)
+    setTimeout(() => setMsg(''), 3000)
+  }
 
-  // LOAN SETTINGS
-  const [interestRate, setInterestRate] = useState(20);
-  const [maxLoanAmount, setMaxLoanAmount] = useState(100000);
-  const [minLoanAmount, setMinLoanAmount] = useState(500);
+  async function saveProfile(e) {
+    e.preventDefault()
+    if (!name.trim()) { flash('Name is required', 'error'); return }
 
-  // APPROVAL SETTINGS
-  const [requireBothSignatories, setRequireBothSignatories] = useState(true);
-  const [autoApproveUnder500, setAutoApproveUnder500] = useState(false);
+    setSaving(true)
+    const res = await apiFetch('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify({ name: name.trim(), phone: phone.trim() })
+    })
+    setSaving(false)
 
-  // REPORT SETTINGS
-  const [yearEndTarget, setYearEndTarget] = useState(5000);
-  const [autoGenerateReport, setAutoGenerateReport] = useState(true);
-  const [shareWithAllMembers, setShareWithAllMembers] = useState(true);
+    if (res.ok) flash('Profile updated')
+    else flash(res.data.message || 'Could not save', 'error')
+  }
 
-  // SECURITY & ACCOUNT (no edit needed)
-  const [password, setPassword] = useState('********');
+  async function changePassword(e) {
+    e.preventDefault()
+    if (!oldPass || !newPass) { flash('Fill in both password fields', 'error'); return }
+    if (newPass.length < 6) { flash('New password needs 6+ characters', 'error'); return }
+
+    setSaving(true)
+    const res = await apiFetch('/auth/password', {
+      method: 'PUT',
+      body: JSON.stringify({ oldPassword: oldPass, newPassword: newPass })
+    })
+    setSaving(false)
+
+    if (res.ok) {
+      flash('Password changed')
+      setOldPass('')
+      setNewPass('')
+    } else {
+      flash(res.data.message || 'Could not change password', 'error')
+    }
+  }
+
+  const initials = (user?.fullName || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 
   return (
-    <div style={{ maxWidth: '500px', margin: '0 auto', padding: '20px', background: '#f5f5f5' }}>
-      <h1>Settings</h1>
+    <div className="settings-page">
 
-      {/* ===== MY PROFILE ===== */}
-      <div style={{ background: 'white', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
-        <h3>MY PROFILE</h3>
-        <SettingRow label="Name" value={name} onSave={setName} />
-        <SettingRow label="Email" value={email} onSave={setEmail} type="email" />
-        <SettingRow label="Role" value={role} onSave={setRole} type="select" options={['Member', 'Signatory']} />
+      {msg && (
+        <p className={`form-msg ${msgType}`} onClick={() => setMsg('')}>{msg}</p>
+      )}
+
+      {/* profile section */}
+      <div className="card">
+        <h3 className="section-title">My Profile</h3>
+
+        <div className="settings-avatar">
+          <div className="s-avatar">{initials}</div>
+          <div>
+            <p className="s-name">{user?.fullName}</p>
+            <span className={`badge badge-${user?.role}`}>{user?.role}</span>
+          </div>
+        </div>
+
+        <form onSubmit={saveProfile} className="settings-form">
+          <div className="form-row-2">
+            <div className="form-field">
+              <label className="field-label">Full Name</label>
+              <input className="input-field" value={name}
+                onChange={e => setName(e.target.value)} placeholder="Your name" />
+            </div>
+            <div className="form-field">
+              <label className="field-label">Phone</label>
+              <input className="input-field" type="tel" value={phone}
+                onChange={e => setPhone(e.target.value)} placeholder="+267 7x xxx xxx" />
+            </div>
+          </div>
+          <div className="form-field">
+            <label className="field-label">Email</label>
+            <input className="input-field" value={user?.email || ''} disabled style={{ opacity: .6 }} />
+            <p className="field-hint">email cant be changed</p>
+          </div>
+          <button className="btn-primary" type="submit" disabled={saving}
+            style={{ alignSelf: 'flex-start', width: 'auto', padding: '10px 24px' }}>
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </form>
       </div>
 
-      {/* ===== GROUP SETTINGS ===== */}
-      <div style={{ background: 'white', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
-        <h3>GROUP SETTINGS</h3>
-        <SettingRow label="Group Name" value={groupName} onSave={setGroupName} />
-        <SettingRow label="Total Members" value={totalMembers} onSave={setTotalMembers} type="number" />
+      {/* change password */}
+      <div className="card">
+        <h3 className="section-title">Change Password</h3>
+        <form onSubmit={changePassword} className="settings-form">
+          <div className="form-field">
+            <label className="field-label">Current Password</label>
+            <input className="input-field" type="password" value={oldPass}
+              onChange={e => setOldPass(e.target.value)} placeholder="••••••••" />
+          </div>
+          <div className="form-field">
+            <label className="field-label">New Password</label>
+            <input className="input-field" type="password" value={newPass}
+              onChange={e => setNewPass(e.target.value)} placeholder="Min 6 characters" />
+          </div>
+          <button className="btn-primary" type="submit" disabled={saving}
+            style={{ alignSelf: 'flex-start', width: 'auto', padding: '10px 24px' }}>
+            {saving ? 'Updating…' : 'Update Password'}
+          </button>
+        </form>
       </div>
 
-      {/* ===== CONTRIBUTION SETTINGS ===== */}
-      <div style={{ background: 'white', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
-        <h3>CONTRIBUTION SETTINGS</h3>
-        <SettingRow label="Monthly Amount (P)" value={monthlyAmount} onSave={setMonthlyAmount} type="number" />
-        <SettingRow label="Due Date" value={dueDate} onSave={setDueDate} />
-        <SettingRow label="Payment Reminder" value={paymentReminder} onSave={setPaymentReminder} />
+      {/* group info - read only */}
+      <div className="card">
+        <h3 className="section-title">Group Info</h3>
+        <div className="settings-info-list">
+          <div className="s-info-row">
+            <span className="s-info-label">Group</span>
+            <span className="s-info-val">{user?.groupName || 'No group'}</span>
+          </div>
+          <div className="s-info-row">
+            <span className="s-info-label">Your role</span>
+            <span className="s-info-val" style={{ textTransform: 'capitalize' }}>{user?.role}</span>
+          </div>
+          <div className="s-info-row">
+            <span className="s-info-label">Interest rate</span>
+            <span className="s-info-val">20% / month</span>
+          </div>
+          <div className="s-info-row">
+            <span className="s-info-label">Year-end target</span>
+            <span className="s-info-val">P5 000 interest</span>
+          </div>
+        </div>
       </div>
 
-      {/* ===== LOAN SETTINGS ===== */}
-      <div style={{ background: 'white', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
-        <h3>LOAN SETTINGS</h3>
-        <SettingRow label="Interest Rate (% per month)" value={interestRate} onSave={setInterestRate} type="number" />
-        <SettingRow label="Maximum Loan Amount (P)" value={maxLoanAmount} onSave={setMaxLoanAmount} type="number" />
-        <SettingRow label="Minimum Loan Amount (P)" value={minLoanAmount} onSave={setMinLoanAmount} type="number" />
+      <div className="card">
+        <h3 className="section-title">Account</h3>
+        <button className="btn-danger" onClick={logout}>Log Out</button>
       </div>
 
-      {/* ===== APPROVAL SETTINGS ===== */}
-      <div style={{ background: 'white', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
-        <h3>APPROVAL SETTINGS</h3>
-        <SettingRow label="Require Both Signatories" value={requireBothSignatories} onSave={setRequireBothSignatories} type="checkbox" />
-        <SettingRow label="Auto Approve Under P500" value={autoApproveUnder500} onSave={setAutoApproveUnder500} type="checkbox" />
-      </div>
-
-      {/* ===== REPORT SETTINGS ===== */}
-      <div style={{ background: 'white', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
-        <h3>REPORT SETTINGS</h3>
-        <SettingRow label="Year End Target (P)" value={yearEndTarget} onSave={setYearEndTarget} type="number" />
-        <SettingRow label="Auto Generate Report" value={autoGenerateReport} onSave={setAutoGenerateReport} type="checkbox" />
-        <SettingRow label="Share with All Members" value={shareWithAllMembers} onSave={setShareWithAllMembers} type="checkbox" />
-      </div>
-
-      {/* ===== SECURITY ===== */}
-      <div style={{ background: 'white', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
-        <h3>SECURITY</h3>
-        <SettingRow label="Password" value={password} onSave={setPassword} type="password" />
-      </div>
-
-      {/* ===== ACCOUNT ===== */}
-      <div style={{ background: 'white', padding: '15px', borderRadius: '10px' }}>
-        <h3>ACCOUNT</h3>
-        <button style={{ background: '#dc2626', color: 'white', padding: '10px', marginRight: '10px', border: 'none', borderRadius: '5px' }}>LOG OUT</button>
-        <button style={{ background: 'white', color: '#dc2626', padding: '10px', border: '1px solid #dc2626', borderRadius: '5px' }}>DELETE ACCOUNT</button>
-      </div>
     </div>
-  );
+  )
 }
