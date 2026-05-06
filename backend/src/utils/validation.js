@@ -1,5 +1,5 @@
 // basic validation helpers used across controllers
-// TODO: clean this up later, might add joi eventually
+
 
 function isValidEmail(email) {
     if (!email) return false
