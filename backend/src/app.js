@@ -3,6 +3,7 @@ const cors = require('cors')
 const helmet = require('helmet')
 const morgan = require('morgan')
 const path = require('path')
+const errorHandler = require('./middleware/errorHandler')
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
 
 const app = express()
@@ -50,9 +51,7 @@ app.use((req, res) => {
     res.status(404).json({ success: false, message: 'Route not found' })
 })
 
-app.use((err, req, res) => {
-    console.log(err.stack)
-    res.status(500).json({ success: false, message: 'Something went wrong!' })
-})
+// express only treats this as error middleware when arity is 4 (err, req, res, next)
+app.use(errorHandler)
 
 module.exports = app

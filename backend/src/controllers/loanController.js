@@ -235,3 +235,29 @@ exports.getRepayments = async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed' })
     }
 }
+
+// all repayments in the group - used by approvals page
+exports.getAllRepayments = async (req, res) => {
+    try {
+        const gId = req.user.groupId
+        if (!gId) return res.status(400).json({ success: false, message: 'Not in a group' })
+
+        const pending = req.query.pending === 'true'
+
+        let q = `SELECT lr.*, u.full_name as member_name, l.principal_amount
+                 FROM loan_repayments lr
+                 JOIN users u ON u.id = lr.member_id
+                 JOIN loans l ON l.id = lr.loan_id
+                 WHERE l.group_id = ?`
+        const params = [gId]
+
+        if (pending) q += " AND lr.status = 'pending'"
+        q += ' ORDER BY lr.created_at DESC'
+
+        const [rows] = await pool.query(q, params)
+        res.json({ success: true, repayments: rows })
+    } catch (err) {
+        console.log('getAllRepayments err', err)
+        res.status(500).json({ success: false, message: 'Failed to get repayments' })
+    }
+}
