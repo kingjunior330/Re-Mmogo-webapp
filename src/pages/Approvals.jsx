@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
 import '../styles/design.css'
 import '../styles/Approvals.css'
@@ -8,26 +8,27 @@ export default function Approvals() {
 
   const [contributions, setContributions] = useState([])
   const [loans, setLoans] = useState([])
+  const [repayments, setRepayments] = useState([])
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState('')
 
-  const loadPending = useCallback(async () => {
+  useEffect(() => { loadPending() }, [])
+
+  async function loadPending() {
     setLoading(true)
     try {
-      const [cRes, lRes] = await Promise.all([apiFetch('/contributions'), apiFetch('/loans')])
+      // load contributions, loans, and pending repayments all at once
+      const [cRes, lRes, rRes] = await Promise.all([
+        apiFetch('/contributions'),
+        apiFetch('/loans'),
+        apiFetch('/loans/repayments?pending=true')
+      ])
       if (cRes.ok) setContributions(cRes.data.contributions.filter(c => c.status === 'pending'))
       if (lRes.ok) setLoans(lRes.data.loans.filter(l => l.status === 'pending'))
+      if (rRes.ok) setRepayments(rRes.data.repayments || [])
     } catch (err) { console.log(err) }
     setLoading(false)
-  }, [apiFetch])
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      loadPending()
-    }, 0)
-
-    return () => clearTimeout(timer)
-  }, [loadPending])
+  }
 
   async function act(url) {
     const { ok, data } = await apiFetch(url, { method: 'PUT' })
@@ -47,7 +48,7 @@ export default function Approvals() {
     )
   }
 
-  const totalPending = contributions.length + loans.length
+  const totalPending = contributions.length + loans.length + repayments.length
 
   return (
     <div className="approvals-page">
@@ -70,6 +71,10 @@ export default function Approvals() {
         <div className="appr-sum-item">
           <span className="appr-sum-num">{loans.length}</span>
           <span className="appr-sum-label">Loan Requests</span>
+        </div>
+        <div className="appr-sum-item">
+          <span className="appr-sum-num">{repayments.length}</span>
+          <span className="appr-sum-label">Repayments</span>
         </div>
       </div>
 
@@ -123,6 +128,32 @@ export default function Approvals() {
                     <div className="appr-actions">
                       <button className="btn-approve" onClick={() => act(`/loans/${l.id}/approve`)}>Approve</button>
                       <button className="btn-reject"  onClick={() => act(`/loans/${l.id}/reject`)}>Reject</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* pending loan repayments */}
+          <div className="card">
+            <h3 className="section-title">Pending Loan Repayments</h3>
+            {repayments.length === 0 ? (
+              <p className="empty-note">No pending repayments ✓</p>
+            ) : (
+              <div className="approval-list">
+                {repayments.map(r => (
+                  <div className="approval-item" key={r.id}>
+                    <div className="appr-info">
+                      <p className="appr-name">{r.member_name || 'Member'}</p>
+                      <p className="appr-detail">
+                        {/* this is a repayment not a loan - show the amount they're paying back */}
+                        <strong>P{Number(r.amount).toLocaleString()}</strong> repayment
+                        {r.payment_reference ? ` · Ref: ${r.payment_reference}` : ''}
+                      </p>
+                    </div>
+                    <div className="appr-actions">
+                      <button className="btn-approve" onClick={() => act(`/loans/repayments/${r.id}/approve`)}>Approve</button>
                     </div>
                   </div>
                 ))}
