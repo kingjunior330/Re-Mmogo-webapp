@@ -1,12 +1,12 @@
 const { pool } = require('../config/database')
 
-function genCode() {
+function makeCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-    let code = ''
+    let s = ''
     for (let i = 0; i < 8; i++) {
-        code += chars[Math.floor(Math.random() * chars.length)]
+        s += chars[Math.floor(Math.random() * chars.length)]
     }
-    return code
+    return s
 }
 
 exports.createGroup = async (req, res) => {
@@ -21,7 +21,7 @@ exports.createGroup = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Group name is required' })
         }
 
-        // check user doesnt already have a group
+        // make sure user isnt already in another group
         const [existing] = await conn.query(
             'SELECT id FROM group_members WHERE user_id = ? AND is_active = 1',
             [req.user.id]
@@ -31,23 +31,23 @@ exports.createGroup = async (req, res) => {
             return res.status(400).json({ success: false, message: 'You are already in a group' })
         }
 
-        // make sure code is unique
-        let code = genCode()
+        // make a unique code
+        let code = makeCode()
         let [check] = await conn.query('SELECT id FROM motshelo_groups WHERE group_code = ?', [code])
         while (check.length > 0) {
-            code = genCode()
+            code = makeCode()
             ;[check] = await conn.query('SELECT id FROM motshelo_groups WHERE group_code = ?', [code])
         }
 
         const monthly = monthlyContribution || 1000.00
         const rate = interestRate || 20.00
 
-        const [gResult] = await conn.query(
+        const [result] = await conn.query(
             'INSERT INTO motshelo_groups (group_name, group_code, description, monthly_contribution, interest_rate, created_by) VALUES (?, ?, ?, ?, ?, ?)',
             [groupName, code, description || '', monthly, rate, req.user.id]
         )
 
-        const gId = gResult.insertId
+        const gId = result.insertId
 
         // creator becomes admin
         await conn.query(
@@ -82,7 +82,7 @@ exports.joinGroup = async (req, res) => {
             'SELECT * FROM motshelo_groups WHERE group_code = ? AND is_active = 1',
             [groupCode.toUpperCase()]
         )
-        if (groups.length === 0) {
+        if (groups.length == 0) {
             return res.status(404).json({ success: false, message: 'Invalid group code' })
         }
 
@@ -140,7 +140,6 @@ exports.getMyGroup = async (req, res) => {
                 description: g.description,
                 monthlyContribution: g.monthly_contribution,
                 interestRate: g.interest_rate,
-                targetInterest: g.target_interest,
                 memberCount: cnt[0].total,
                 createdAt: g.created_at
             }

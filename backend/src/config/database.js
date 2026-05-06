@@ -1,5 +1,6 @@
-﻿const mysql = require('mysql2');
-require('dotenv').config();
+const path = require('path');
+const mysql = require('mysql2');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
@@ -18,13 +19,13 @@ const promisePool = pool.promise();
 
 const testConnection = async () => {
     try {
-        const [rows] = await promisePool.query('SELECT 1 + 1 AS result');
-        console.log('✅ Cloud database connected successfully!');
-        console.log(`📍 Connected to: ${process.env.DB_HOST}`);
+        await promisePool.query('SELECT 1 + 1 AS result');
+        console.log('Cloud database connected successfully');
+        console.log(`Connected to: ${process.env.DB_HOST}`);
         return true;
     } catch (error) {
-        console.error('❌ Database connection failed:', error.message);
-        console.error('💡 Check your .env file for correct credentials');
+        console.error('Database connection failed:', error.message);
+        console.error('Check your backend/.env file for correct credentials');
         return false;
     }
 };

@@ -2,11 +2,7 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const { pool } = require('../config/database')
 
-function makeToken(payload) {
-    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE || '7d' })
-}
-
-// get user's group membership (they can only be in one group)
+// get group info for a user
 async function getMembership(userId) {
     const [rows] = await pool.query(
         `SELECT gm.group_id, gm.role, mg.group_name, mg.group_code
@@ -40,7 +36,6 @@ exports.register = async (req, res) => {
         )
 
         console.log('new user registered, id:', result.insertId)
-
         res.status(201).json({ success: true, message: 'Account created! Please log in.' })
     } catch (err) {
         console.log('register error', err)
@@ -62,22 +57,24 @@ exports.login = async (req, res) => {
         }
 
         const user = users[0]
-        const ok = await bcrypt.compare(password, user.password_hash)
-        if (!ok) {
+        const match = await bcrypt.compare(password, user.password_hash)
+        if (!match) {
             return res.status(401).json({ success: false, message: 'Wrong email or password' })
         }
 
         const membership = await getMembership(user.id)
 
-        const tokenData = {
-            id: user.id,
-            fullName: user.full_name,
-            email: user.email,
-            role: membership ? membership.role : 'member',
-            groupId: membership ? membership.group_id : null
-        }
-
-        const token = makeToken(tokenData)
+        const token = jwt.sign(
+            {
+                id: user.id,
+                fullName: user.full_name,
+                email: user.email,
+                role: membership ? membership.role : 'member',
+                groupId: membership ? membership.group_id : null
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        )
 
         res.json({
             success: true,
@@ -95,47 +92,6 @@ exports.login = async (req, res) => {
     } catch (err) {
         console.log('login error', err)
         res.status(500).json({ success: false, message: 'Login failed' })
-    }
-}
-
-exports.updateProfile = async (req, res) => {
-    try {
-        const { name, phone } = req.body
-        if (!name || !name.trim()) {
-            return res.status(400).json({ success: false, message: 'Name is required' })
-        }
-        await pool.query(
-            'UPDATE users SET full_name = ?, phone = ? WHERE id = ?',
-            [name.trim(), phone || '', req.user.id]
-        )
-        res.json({ success: true, message: 'Profile updated' })
-    } catch (err) {
-        console.log('updateProfile error', err)
-        res.status(500).json({ success: false, message: 'Could not update profile' })
-    }
-}
-
-exports.changePassword = async (req, res) => {
-    try {
-        const { oldPassword, newPassword } = req.body
-        if (!oldPassword || !newPassword) {
-            return res.status(400).json({ success: false, message: 'Both passwords required' })
-        }
-        if (newPassword.length < 6) {
-            return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' })
-        }
-        const [rows] = await pool.query('SELECT password_hash FROM users WHERE id = ?', [req.user.id])
-        if (rows.length === 0) return res.status(404).json({ success: false, message: 'User not found' })
-
-        const match = await bcrypt.compare(oldPassword, rows[0].password_hash)
-        if (!match) return res.status(401).json({ success: false, message: 'Current password is incorrect' })
-
-        const hash = await bcrypt.hash(newPassword, 12)
-        await pool.query('UPDATE users SET password_hash = ? WHERE id = ?', [hash, req.user.id])
-        res.json({ success: true, message: 'Password changed successfully' })
-    } catch (err) {
-        console.log('changePassword error', err)
-        res.status(500).json({ success: false, message: 'Could not change password' })
     }
 }
 
@@ -168,5 +124,48 @@ exports.getMe = async (req, res) => {
     } catch (err) {
         console.log('getMe error', err)
         res.status(500).json({ success: false, message: 'Could not get user' })
+    }
+}
+
+exports.updateProfile = async (req, res) => {
+    try {
+        const { name, phone } = req.body
+        if (!name || !name.trim()) {
+            return res.status(400).json({ success: false, message: 'Name is required' })
+        }
+        await pool.query(
+            'UPDATE users SET full_name = ?, phone = ? WHERE id = ?',
+            [name.trim(), phone || '', req.user.id]
+        )
+        res.json({ success: true, message: 'Profile updated' })
+    } catch (err) {
+        console.log('updateProfile error', err)
+        res.status(500).json({ success: false, message: 'Could not update profile' })
+    }
+}
+
+exports.changePassword = async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body
+        if (!oldPassword || !newPassword) {
+            return res.status(400).json({ success: false, message: 'Both passwords required' })
+        }
+        if (newPassword.length < 6) {
+            return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' })
+        }
+
+        const [rows] = await pool.query('SELECT password_hash FROM users WHERE id = ?', [req.user.id])
+        if (rows.length === 0) return res.status(404).json({ success: false, message: 'User not found' })
+
+        const ok = await bcrypt.compare(oldPassword, rows[0].password_hash)
+        if (!ok) return res.status(401).json({ success: false, message: 'Current password is incorrect' })
+
+        const hash = await bcrypt.hash(newPassword, 12)
+        await pool.query('UPDATE users SET password_hash = ? WHERE id = ?', [hash, req.user.id])
+
+        res.json({ success: true, message: 'Password changed' })
+    } catch (err) {
+        console.log('changePassword error', err)
+        res.status(500).json({ success: false, message: 'Could not change password' })
     }
 }

@@ -1,70 +1,42 @@
 .setup-screen {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1976d2, #64b5f6);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  font-family: Arial, sans-serif;
+  background: var(--bg);
+  padding: 20px;
 }
 
 .setup-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  padding: 32px 28px;
   width: 100%;
-  max-width: 460px;
-  background: white;
-  border-radius: 24px;
-  padding: 34px 28px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
-}
-
-.setup-brand {
-  justify-content: center;
-  margin-bottom: 18px;
+  max-width: 400px;
 }
 
 .setup-tabs {
   display: flex;
-  gap: 10px;
-  margin: 26px 0 20px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  margin-bottom: 20px;
 }
 
 .setup-tab {
   flex: 1;
-  padding: 12px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 600;
   border: none;
-  border-radius: 12px;
-  background: #e2e8f0;
-  color: #334155;
-  font-size: 14px;
-  font-weight: 700;
+  background: transparent;
+  color: var(--text-sub);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background .2s, color .2s;
 }
-
 .setup-tab.active {
-  background: #1976d2;
-  color: white;
+  background: var(--blue);
+  color: #fff;
 }
-
-.setup-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.group-code-input {
-  text-transform: uppercase;
-  text-align: center;
-  letter-spacing: 0.12em;
-  font-weight: 700;
-}
-
-@media (max-width: 500px) {
-  .setup-card {
-    padding: 28px 20px;
-  }
-
-  .setup-tabs {
-    flex-direction: column;
-  }
-}
+.setup-tab:not(.active):hover { background: var(--blue-light); color: var(--blue); }

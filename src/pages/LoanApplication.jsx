@@ -1,169 +1,168 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useApp } from "../context/AppContext";
-import "../styles/design.css";
-import "../styles/LoanApplication.css";
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
+import '../styles/design.css'
+import '../styles/LoanApplication.css'
 
 export default function LoanApplication() {
-  const navigate = useNavigate();
-  const { apiFetch } = useApp();
+  const navigate = useNavigate()
+  const { apiFetch, fetchLoans } = useApp()
 
-  const [amount, setAmount] = useState("");
-  const [term, setTerm] = useState("");
-  const [purpose, setPurpose] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [msg, setMsg] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [amount, setAmount]   = useState('')
+  const [term, setTerm]       = useState('')
+  const [purpose, setPurpose] = useState('')
+  const [msg, setMsg]         = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const interestRate = 20;
-
-  const interestAmount =
-    amount && term ? Number(amount) * (interestRate / 100) * Number(term) : 0;
-
-  const totalRepayment = amount ? Number(amount) + interestAmount : 0;
+  // calculator state
+  const [calcAmt, setCalcAmt]   = useState('')
+  const [calcTerm, setCalcTerm] = useState('')
+  const [calc, setCalc]         = useState(null)
 
   async function handleSubmit(e) {
-    e.preventDefault();
-    setMsg("");
+    e.preventDefault()
 
-    if (!amount || Number(amount) <= 0) {
-      setMsg("Enter a valid loan amount.");
-      return;
+    if (!amount || !term || !purpose) {
+      setMsg('Please fill in all fields')
+      return
+    }
+    if (Number(amount) <= 0) {
+      setMsg('Enter a valid amount')
+      return
     }
 
-    if (!term || Number(term) <= 0) {
-      setMsg("Enter a valid loan term.");
-      return;
-    }
+    setLoading(true)
+    setMsg('')
 
-    if (!purpose.trim()) {
-      setMsg("Enter the loan purpose.");
-      return;
-    }
+    const months = parseInt(term) || 6
+    const due = new Date()
+    due.setMonth(due.getMonth() + months)
+    const dueDate = due.toISOString().split('T')[0]
 
-    setLoading(true);
-
-    const res = await apiFetch("/loans", {
-      method: "POST",
+    const res = await apiFetch('/loans', {
+      method: 'POST',
       body: JSON.stringify({
-        amount: Number(amount),
-        term: Number(term),
-        purpose: purpose.trim(),
-        dueDate,
-      }),
-    });
+        principalAmount: Number(amount),
+        purpose,
+        termMonths: months,
+        dueDate
+      })
+    })
+
+    setLoading(false)
 
     if (res.ok) {
-      setMsg("success:Loan application submitted. Awaiting approval.");
-      setTimeout(() => navigate("/loans"), 1000);
+      fetchLoans(true)
+      navigate('/loans')
     } else {
-      setMsg(res.data.message || "Could not submit loan application.");
+      setMsg(res.data.message || 'Could not submit application')
     }
-
-    setLoading(false);
   }
 
-  const isSuccess = msg.startsWith("success:");
+  function doCalc() {
+    const p = Number(calcAmt)
+    const m = Number(calcTerm)
+    if (!p || !m) return
+
+    const interest = p * 0.2 * m
+    const total    = p + interest
+    const monthly  = total / m
+
+    setCalc({ interest, total, monthly })
+  }
 
   return (
     <div className="loan-app-page">
-      <div className="card">
-        <h3 className="section-title">Apply for a Loan</h3>
 
-        <p className="loan-note">
-          Loans are charged at <strong>20% interest per month</strong> and must
-          be approved before release.
-        </p>
-
-        <form onSubmit={handleSubmit} className="loan-application-form">
-          <div className="field-group">
-            <label className="field-label">Loan Amount (BWP)</label>
-            <input
-              className="input-field"
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Example: 4000"
-            />
-          </div>
-
-          <div className="field-group">
-            <label className="field-label">Loan Term (Months)</label>
-            <input
-              className="input-field"
-              type="number"
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              placeholder="Example: 2"
-            />
-          </div>
-
-          <div className="field-group">
-            <label className="field-label">Purpose</label>
-            <input
-              className="input-field"
-              type="text"
-              value={purpose}
-              onChange={(e) => setPurpose(e.target.value)}
-              placeholder="Why do you need this loan?"
-            />
-          </div>
-
-          <div className="field-group">
-            <label className="field-label">Due Date</label>
-            <input
-              className="input-field"
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
-          </div>
-
-          {msg && (
-            <p className={`form-msg ${isSuccess ? "success" : "error"}`}>
-              {msg.replace("success:", "")}
-            </p>
-          )}
-
-          <div className="loan-actions">
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? "Submitting..." : "Submit Application"}
-            </button>
-
-            <button
-              type="button"
-              className="btn-cancel"
-              onClick={() => navigate("/loans")}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+      <div className="loan-app-header">
+        <button className="btn-ghost" onClick={() => navigate('/loans')}
+          style={{ width: 'auto', padding: '8px 16px' }}>← Back</button>
+        <h3 style={{ margin: 0 }}>Apply for a Loan</h3>
       </div>
 
-      <div className="card calculator-card">
-        <h3 className="section-title">Loan Calculator</h3>
+      <div className="loan-app-body">
 
-        <div className="calc-row">
-          <span>Amount Requested</span>
-          <strong>P{Number(amount || 0).toLocaleString()}</strong>
+        {/* application form */}
+        <div className="card">
+          <h3 className="section-title">Loan Application</h3>
+          <p style={{ fontSize: 13, color: 'var(--text-sub)', marginBottom: 16 }}>
+            Your request will be reviewed by group signatories.
+          </p>
+
+          {msg && <p className="form-msg error" style={{ marginBottom: 12 }}>{msg}</p>}
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="form-field">
+              <label className="field-label">Amount (BWP)</label>
+              <input className="input-field" type="number"
+                value={amount} onChange={e => setAmount(e.target.value)}
+                placeholder="Amount" min="1" />
+            </div>
+
+            <div className="form-field">
+              <label className="field-label">Term (months)</label>
+              <input className="input-field" type="number"
+                value={term} onChange={e => setTerm(e.target.value)}
+                placeholder="Months" min="1" max="24" />
+            </div>
+
+            <div className="form-field">
+              <label className="field-label">Purpose / Reason</label>
+              <input className="input-field" type="text"
+                value={purpose} onChange={e => setPurpose(e.target.value)}
+                placeholder="Reason for loan" />
+            </div>
+
+            <button className="btn-primary" type="submit" disabled={loading}>
+              {loading ? 'Submitting…' : 'Submit Application'}
+            </button>
+          </form>
         </div>
 
-        <div className="calc-row">
-          <span>Interest Rate</span>
-          <strong>{interestRate}% per month</strong>
+        {/* calculator */}
+        <div className="card">
+          <h3 className="section-title">Interest Calculator</h3>
+          <p style={{ fontSize: 13, color: 'var(--text-sub)', marginBottom: 16 }}>
+            Estimate your repayments at 20% per month.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="form-field">
+              <label className="field-label">Loan Amount</label>
+              <input className="input-field" type="number"
+                value={calcAmt} onChange={e => setCalcAmt(e.target.value)}
+                placeholder="Amount" />
+            </div>
+
+            <div className="form-field">
+              <label className="field-label">Term (months)</label>
+              <input className="input-field" type="number"
+                value={calcTerm} onChange={e => setCalcTerm(e.target.value)}
+                placeholder="Months" />
+            </div>
+
+            <button className="btn-secondary" type="button" onClick={doCalc}>Calculate</button>
+          </div>
+
+          {calc && (
+            <div className="calc-results">
+              <div className="calc-row">
+                <span>Interest (20%/mo)</span>
+                <span>P{calc.interest.toFixed(2)}</span>
+              </div>
+              <div className="calc-row">
+                <span>Monthly repayment</span>
+                <span>P{calc.monthly.toFixed(2)}</span>
+              </div>
+              <div className="calc-row calc-total">
+                <span>Total repayment</span>
+                <span>P{calc.total.toFixed(2)}</span>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="calc-row">
-          <span>Interest Amount</span>
-          <strong>P{interestAmount.toLocaleString()}</strong>
-        </div>
-
-        <div className="calc-row total-row">
-          <span>Total Repayment</span>
-          <strong>P{totalRepayment.toLocaleString()}</strong>
-        </div>
       </div>
     </div>
-  );
+  )
 }

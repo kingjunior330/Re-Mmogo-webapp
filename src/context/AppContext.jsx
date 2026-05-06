@@ -1,273 +1,217 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react'
 
-const AppContext = createContext();
+const AppContext = createContext()
 
-const API_BASE = "http://localhost:5000";
+const API = import.meta.env.VITE_API_URL || '/api'
+
+// wrapper so we dont repeat the auth header every time
+async function callApi(path, opts = {}) {
+  const token = localStorage.getItem('token')
+  const headers = { 'Content-Type': 'application/json', ...opts.headers }
+  if (token) headers['Authorization'] = 'Bearer ' + token
+
+  try {
+    const res = await fetch(API + path, { ...opts, headers })
+    const raw = await res.text()
+    let data
+
+    try {
+      data = raw ? JSON.parse(raw) : {}
+    } catch {
+      data = { message: raw || 'Unexpected server response' }
+    }
+
+    return { ok: res.ok, status: res.status, data }
+  } catch {
+    return {
+      ok: false,
+      status: 0,
+      data: { message: 'Could not reach the server. Please make sure the backend is running.' }
+    }
+  }
+}
 
 export function AppProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null)
+  const [token, setToken] = useState(() => localStorage.getItem('token') || null)
+  const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('token')))
 
-  const [loading, setLoading] = useState(true);
+  const [loans, setLoans] = useState([])
+  const [contributions, setContributions] = useState([])
+  const [members, setMembers] = useState([])
+  const [activity, setActivity] = useState([])
+  const [memberRequests, setMemberRequests] = useState([])
 
-  const [loans, setLoans] = useState([]);
-  const [contributions, setContributions] = useState([]);
-  const [members, setMembers] = useState([]);
-  const [activity, setActivity] = useState([]);
-
-  /* ---------------------------------- */
-  /* AUTH */
-  /* ---------------------------------- */
-
+  // restore session on load
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const savedUser = localStorage.getItem("user");
-
-    if (token && savedUser) {
-      setUser(JSON.parse(savedUser));
+    if (!token) {
+      setUser(null)
+      return
     }
 
-    setLoading(false);
-  }, []);
+    let cancelled = false
 
-  function saveAuth(token, userData) {
-    localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(userData));
-    setUser(userData);
-  }
+    async function restoreSession() {
+      try {
+        const res = await callApi('/auth/me')
+        if (cancelled) return
 
-  function logout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-
-    setUser(null);
-    setLoans([]);
-    setContributions([]);
-    setMembers([]);
-    setActivity([]);
-  }
-
-  /* ---------------------------------- */
-  /* API HELPER */
-  /* ---------------------------------- */
-
-  async function apiFetch(path, options = {}) {
-    try {
-      const token = localStorage.getItem("token");
-
-      const res = await fetch(`${API_BASE}${path}`, {
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...(options.headers || {}),
-        },
-        ...options,
-      });
-
-      const data = await res.json();
-
-      return {
-        ok: res.ok,
-        status: res.status,
-        data,
-      };
-    } catch (error) {
-      console.error(error);
-
-      return {
-        ok: false,
-        data: {
-          message: "Network error. Please try again.",
-        },
-      };
+        if (res.ok) {
+          setUser(res.data.user)
+        } else {
+          localStorage.removeItem('token')
+          setToken(null)
+        }
+      } catch {
+        if (!cancelled) {
+          localStorage.removeItem('token')
+          setToken(null)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
+
+    setLoading(true)
+    restoreSession()
+
+    return () => {
+      cancelled = true
+    }
+  }, [token])
+
+  function addActivity(type, text) {
+    const item = { id: Date.now(), type, text, time: 'just now' }
+    setActivity(prev => [item, ...prev])
   }
 
-  /* ---------------------------------- */
-  /* LOGIN */
-  /* ---------------------------------- */
-
-  async function login(email, password) {
-    const res = await apiFetch("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    });
-
+  const login = useCallback(async (email, password) => {
+    const res = await callApi('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    })
     if (res.ok) {
-      saveAuth(res.data.token, res.data.user);
+      localStorage.setItem('token', res.data.token)
+      setToken(res.data.token)
+      setUser(res.data.user)
     }
+    return res
+  }, [])
 
-    return res;
-  }
+  const register = useCallback(async (fullName, email, phone, password) => {
+    return callApi('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ fullName, email, phone, password })
+    })
+  }, [])
 
-  /* ---------------------------------- */
-  /* REGISTER */
-  /* ---------------------------------- */
+  const logout = useCallback(() => {
+    localStorage.removeItem('token')
+    setToken(null)
+    setUser(null)
+    setLoans([])
+    setContributions([])
+    setMembers([])
+    setActivity([])
+  }, [])
 
-  async function register(fullName, email, phone, password) {
-    return await apiFetch("/auth/register", {
-      method: "POST",
-      body: JSON.stringify({
-        fullName,
-        email,
-        phone,
-        password,
-      }),
-    });
-  }
-
-  /* ---------------------------------- */
-  /* GROUPS */
-  /* ---------------------------------- */
-
-  async function createGroup(name, description) {
-    const res = await apiFetch("/groups", {
-      method: "POST",
-      body: JSON.stringify({
-        name,
-        description,
-      }),
-    });
-
-    if (res.ok && res.data.user) {
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      setUser(res.data.user);
-    }
-
-    return res;
-  }
-
-  async function joinGroup(code) {
-    const res = await apiFetch("/groups/join", {
-      method: "POST",
-      body: JSON.stringify({
-        code,
-      }),
-    });
-
-    if (res.ok && res.data.user) {
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      setUser(res.data.user);
-    }
-
-    return res;
-  }
-
-  /* ---------------------------------- */
-  /* MEMBERS */
-  /* ---------------------------------- */
-
-  async function fetchMembers() {
-    const res = await apiFetch("/members");
-
+  const createGroup = useCallback(async (groupName, description) => {
+    const res = await callApi('/groups', {
+      method: 'POST',
+      body: JSON.stringify({ groupName, description })
+    })
     if (res.ok) {
-      setMembers(res.data.members || []);
+      const g = res.data.group
+      setUser(prev => ({ ...prev, groupId: g.id, groupName: g.groupName, groupCode: g.groupCode, role: 'admin' }))
     }
-  }
+    return res
+  }, [])
 
-  /* ---------------------------------- */
-  /* CONTRIBUTIONS */
-  /* ---------------------------------- */
-
-  async function fetchContributions() {
-    const res = await apiFetch("/contributions");
-
+  const joinGroup = useCallback(async (groupCode) => {
+    const res = await callApi('/groups/join', {
+      method: 'POST',
+      body: JSON.stringify({ groupCode })
+    })
     if (res.ok) {
-      const items = res.data.contributions || [];
-
-      setContributions(items);
-
-      setActivity((prev) => [
-        ...items.slice(0, 5).map((item) => ({
-          id: `c-${item.id}`,
-          type: "contribution",
-          text: `${
-            item.memberName || "Member"
-          } contributed P${Number(item.amount || 0).toLocaleString()}`,
-          time: "recently",
-        })),
-        ...prev,
-      ]);
+      const g = res.data.group
+      setUser(prev => ({ ...prev, groupId: g.id, groupName: g.groupName, groupCode: g.groupCode, role: 'member' }))
     }
+    return res
+  }, [])
+
+  const fetchLoans = useCallback(async (mine = false) => {
+    const res = await callApi('/loans' + (mine ? '?mine=true' : ''))
+    if (res.ok) setLoans(res.data.loans)
+    return res.data
+  }, [])
+
+  const fetchContributions = useCallback(async (mine = false) => {
+    const res = await callApi('/contributions' + (mine ? '?mine=true' : ''))
+    if (res.ok) setContributions(res.data.contributions)
+    return res.data
+  }, [])
+
+  const fetchMembers = useCallback(async () => {
+    const res = await callApi('/members')
+    if (res.ok) setMembers(res.data.members)
+    return res.data
+  }, [])
+
+  // local state helpers (not persisted)
+  function addLoan(loan) {
+    const tmp = {
+      id: Date.now(),
+      principalAmount: loan.amount,
+      outstandingBalance: loan.amount,
+      interestAccrued: 0,
+      status: 'pending',
+      purpose: loan.reason,
+      memberName: user ? user.fullName : 'Me',
+      dueDate: loan.dueDate
+    }
+    setLoans(prev => [...prev, tmp])
+    addActivity('loan', 'Loan of P' + loan.amount + ' submitted for approval')
   }
 
-  /* ---------------------------------- */
-  /* LOANS */
-  /* ---------------------------------- */
-
-  async function fetchLoans(includeHistory = false) {
-    const res = await apiFetch(
-      includeHistory ? "/loans?all=true" : "/loans"
-    );
-
-    if (res.ok) {
-      const items = res.data.loans || [];
-
-      setLoans(items);
-
-      setActivity((prev) => [
-        ...items.slice(0, 5).map((item) => ({
-          id: `l-${item.id}`,
-          type: "loan",
-          text: `${
-            item.memberName || "Member"
-          } applied for P${Number(
-            item.amount || item.principalAmount || 0
-          ).toLocaleString()} loan`,
-          time: "recently",
-        })),
-        ...prev,
-      ]);
-    }
+  function addMemberRequest(m) {
+    const tmp = { id: Date.now(), name: m.name, email: m.email, role: m.role, status: 'Pending' }
+    setMemberRequests(prev => [...prev, tmp])
+    addActivity('member', m.name + ' requested to join the group')
   }
 
-  /* ---------------------------------- */
-  /* CONTEXT VALUE */
-  /* ---------------------------------- */
+  function addContribution(c) {
+    const tmp = {
+      id: Date.now(),
+      amount: c.amount,
+      memberName: user ? user.fullName : 'Me',
+      monthYear: c.month,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    }
+    setContributions(prev => [...prev, tmp])
+    addActivity('contribution', 'Contribution of P' + c.amount + ' submitted')
+  }
 
-  const value = {
-    API_BASE,
-
-    user,
-    setUser,
-
-    loading,
-
-    loans,
-    setLoans,
-
-    contributions,
-    setContributions,
-
-    members,
-    setMembers,
-
-    activity,
-    setActivity,
-
-    login,
-    register,
-    logout,
-
-    createGroup,
-    joinGroup,
-
-    fetchLoans,
-    fetchContributions,
-    fetchMembers,
-
-    apiFetch,
-  };
+  function updateLoan(updated) {
+    setLoans(prev => prev.map(l => l.id === updated.id ? { ...l, ...updated } : l))
+  }
 
   return (
-    <AppContext.Provider value={value}>
+    <AppContext.Provider value={{
+      user, token, loading,
+      loans, contributions, members, activity, memberRequests,
+      login, logout, register,
+      createGroup, joinGroup,
+      fetchLoans, fetchContributions, fetchMembers,
+      addLoan, addContribution, addMemberRequest, updateLoan,
+      addActivity,
+      apiFetch: callApi
+    }}>
       {children}
     </AppContext.Provider>
-  );
+  )
 }
 
 export function useApp() {
-  return useContext(AppContext);
+  return useContext(AppContext)
 }

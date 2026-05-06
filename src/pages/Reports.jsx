@@ -1,94 +1,81 @@
-import { useEffect, useState } from "react";
-import { useApp } from "../context/AppContext";
-import "../styles/design.css";
-import "../styles/Reports.css";
+import { useState, useEffect } from 'react'
+import { useApp } from '../context/AppContext'
+import '../styles/design.css'
+import '../styles/Reports.css'
 
 export default function Reports() {
-  const { apiFetch } = useApp();
+  const { apiFetch } = useApp()
 
-  const [report, setReport] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState("");
+  const [report, setReport] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState('')
 
   useEffect(() => {
-    async function loadReport() {
-      const res = await apiFetch("/reports/year-end");
-
+    apiFetch('/reports/year-end').then(res => {
       if (res.ok) {
-        setReport(res.data);
+        setReport(res.data)
       } else {
-        setErr(res.data.message || "Could not load report.");
+        setErr(res.data.message || 'Could not load report')
       }
+      setLoading(false)
+    })
+  }, [apiFetch])
 
-      setLoading(false);
+  if (loading) return (
+    <div className="card" style={{ textAlign: 'center', padding: 40, color: 'var(--text-sub)' }}>
+      Loading report…
+    </div>
+  )
+
+  if (err) return <div className="card form-msg error">{err}</div>
+
+  const rows = report?.members || []
+
+  // totals
+  let totalContrib = 0
+  let totalInterest = 0
+  let totalLoans = 0
+  for (let i = 0; i < rows.length; i++) {
+    totalContrib  += Number(rows[i].totalContributions || 0)
+    totalInterest += Number(rows[i].interestEarned || 0)
+    totalLoans    += Number(rows[i].totalBorrowed || 0)
+  }
+
+  // top contributor
+  let topMember = null
+  for (let i = 0; i < rows.length; i++) {
+    if (!topMember || Number(rows[i].totalContributions) > Number(topMember.totalContributions)) {
+      topMember = rows[i]
     }
-
-    loadReport();
-  }, []);
-
-  if (loading) {
-    return <div className="card loading-card">Loading report...</div>;
   }
 
-  if (err) {
-    return <div className="card form-msg error">{err}</div>;
+  let metTarget = 0
+  for (let i = 0; i < rows.length; i++) {
+    if (Number(rows[i].interestEarned) >= 5000) metTarget++
   }
-
-  const rows = report?.members || [];
-
-  const totalContributions = rows.reduce(
-    (sum, row) => sum + Number(row.totalContributions || 0),
-    0
-  );
-
-  const totalInterest = rows.reduce(
-    (sum, row) => sum + Number(row.interestEarned || 0),
-    0
-  );
-
-  const totalLoans = rows.reduce(
-    (sum, row) => sum + Number(row.totalBorrowed || 0),
-    0
-  );
-
-  const topMember = rows.reduce((best, row) => {
-    if (!best) return row;
-    return Number(row.totalContributions || 0) >
-      Number(best.totalContributions || 0)
-      ? row
-      : best;
-  }, null);
-
-  const metTarget = rows.filter(
-    (row) => Number(row.interestEarned || 0) >= 5000
-  ).length;
 
   return (
     <div className="reports-page">
+
       <div className="reports-cards">
         <div className="rep-card rep-blue">
-          <p>Total Contributions</p>
-          <h2>P{totalContributions.toLocaleString()}</h2>
+          <p className="rep-card-label">Total Contributions</p>
+          <p className="rep-card-val">P{totalContrib.toLocaleString()}</p>
         </div>
-
         <div className="rep-card rep-green">
-          <p>Total Interest</p>
-          <h2>P{totalInterest.toLocaleString()}</h2>
+          <p className="rep-card-label">Total Interest</p>
+          <p className="rep-card-val">P{totalInterest.toLocaleString()}</p>
         </div>
-
         <div className="rep-card rep-orange">
-          <p>Total Loans</p>
-          <h2>P{totalLoans.toLocaleString()}</h2>
+          <p className="rep-card-label">Total Loans</p>
+          <p className="rep-card-val">P{totalLoans.toLocaleString()}</p>
         </div>
       </div>
 
       <div className="card">
         <h3 className="section-title">Member Year-End Breakdown</h3>
-
         {rows.length === 0 ? (
-          <p className="empty-note">
-            No data yet. Contributions and loans will appear here.
-          </p>
+          <p className="empty-note">No data yet — contributions and loans will appear here.</p>
         ) : (
           <div className="rep-table-wrap">
             <table className="rep-table">
@@ -101,28 +88,24 @@ export default function Reports() {
                   <th>Target Met</th>
                 </tr>
               </thead>
-
               <tbody>
-                {rows.map((row, index) => {
-                  const contributions = Number(row.totalContributions || 0);
-                  const loans = Number(row.totalBorrowed || 0);
-                  const interest = Number(row.interestEarned || 0);
-
+                {rows.map((r, i) => {
+                  const c = Number(r.totalContributions || 0)
+                  const l = Number(r.totalBorrowed || 0)
+                  const ie = Number(r.interestEarned || 0)
                   return (
-                    <tr key={index}>
-                      <td>{row.memberName || "—"}</td>
-                      <td>P{contributions.toLocaleString()}</td>
-                      <td>P{loans.toLocaleString()}</td>
-                      <td>P{interest.toLocaleString()}</td>
+                    <tr key={i}>
+                      <td>{r.memberName || '—'}</td>
+                      <td>P{c.toLocaleString()}</td>
+                      <td>P{l.toLocaleString()}</td>
+                      <td>P{ie.toLocaleString()}</td>
                       <td>
-                        {interest >= 5000 ? (
-                          <span className="badge badge-approved">Yes</span>
-                        ) : (
-                          <span className="badge badge-pending">Not yet</span>
-                        )}
+                        {ie >= 5000
+                          ? <span className="badge badge-approved">✓ Yes</span>
+                          : <span className="badge badge-pending">Not yet</span>}
                       </td>
                     </tr>
-                  );
+                  )
                 })}
               </tbody>
             </table>
@@ -133,36 +116,32 @@ export default function Reports() {
       {rows.length > 0 && (
         <div className="card">
           <h3 className="section-title">🏆 Year-End Highlights</h3>
-
           <div className="highlights-grid">
             <div className="highlight-item">
-              <span>🏆</span>
+              <span className="h-icon">🏆</span>
               <div>
-                <p>Highest Contributor</p>
-                <h4>{topMember?.memberName || "—"}</h4>
+                <p className="h-label">Highest Contributor</p>
+                <p className="h-val">{topMember?.memberName || '—'}</p>
               </div>
             </div>
-
             <div className="highlight-item">
-              <span>🎯</span>
+              <span className="h-icon">🎯</span>
               <div>
-                <p>P5 000 Interest Target</p>
-                <h4>
-                  {metTarget} / {rows.length} members met it
-                </h4>
+                <p className="h-label">Target (P5 000 interest)</p>
+                <p className="h-val">{metTarget} / {rows.length} members met it</p>
               </div>
             </div>
-
             <div className="highlight-item">
-              <span>👥</span>
+              <span className="h-icon">👥</span>
               <div>
-                <p>Total Members</p>
-                <h4>{rows.length}</h4>
+                <p className="h-label">Total Members</p>
+                <p className="h-val">{rows.length}</p>
               </div>
             </div>
           </div>
         </div>
       )}
+
     </div>
-  );
+  )
 }
