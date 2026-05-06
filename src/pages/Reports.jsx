@@ -13,13 +13,14 @@ export default function Reports() {
   useEffect(() => {
     apiFetch('/reports/year-end').then(res => {
       if (res.ok) {
-        setReport(res.data)
+        // backend wraps the data in a "report" key, unwrap it
+        setReport(res.data.report || res.data)
       } else {
         setErr(res.data.message || 'Could not load report')
       }
       setLoading(false)
     })
-  }, [apiFetch])
+  }, [])
 
   if (loading) return (
     <div className="card" style={{ textAlign: 'center', padding: 40, color: 'var(--text-sub)' }}>
@@ -31,32 +32,27 @@ export default function Reports() {
 
   const rows = report?.members || []
 
-  // totals
-  let totalContrib = 0
-  let totalInterest = 0
-  let totalLoans = 0
+  // calc totals from rows
+  let totalContrib = 0, totalInterest = 0, totalLoans = 0
   for (let i = 0; i < rows.length; i++) {
-    totalContrib  += Number(rows[i].totalContributions || 0)
-    totalInterest += Number(rows[i].interestEarned || 0)
-    totalLoans    += Number(rows[i].totalBorrowed || 0)
+    totalContrib   += Number(rows[i].totalContributions || rows[i].contributions || 0)
+    totalInterest  += Number(rows[i].interestEarned    || rows[i].interest       || 0)
+    totalLoans     += Number(rows[i].totalBorrowed      || rows[i].loans          || 0)
   }
 
-  // top contributor
-  let topMember = null
-  for (let i = 0; i < rows.length; i++) {
-    if (!topMember || Number(rows[i].totalContributions) > Number(topMember.totalContributions)) {
-      topMember = rows[i]
-    }
-  }
-
-  let metTarget = 0
-  for (let i = 0; i < rows.length; i++) {
-    if (Number(rows[i].interestEarned) >= 5000) metTarget++
-  }
+  // highest contributor
+  const sorted = [...rows].sort((a, b) => {
+    const ac = Number(a.totalContributions || a.contributions || 0)
+    const bc = Number(b.totalContributions || b.contributions || 0)
+    return bc - ac
+  })
+  const topMember = sorted[0]
+  const metTarget = rows.filter(r => Number(r.interestEarned || r.interest || 0) >= 5000).length
 
   return (
     <div className="reports-page">
 
+      {/* summary cards */}
       <div className="reports-cards">
         <div className="rep-card rep-blue">
           <p className="rep-card-label">Total Contributions</p>
@@ -72,6 +68,7 @@ export default function Reports() {
         </div>
       </div>
 
+      {/* member breakdown */}
       <div className="card">
         <h3 className="section-title">Member Year-End Breakdown</h3>
         {rows.length === 0 ? (
@@ -90,17 +87,17 @@ export default function Reports() {
               </thead>
               <tbody>
                 {rows.map((r, i) => {
-                  const c = Number(r.totalContributions || 0)
-                  const l = Number(r.totalBorrowed || 0)
-                  const ie = Number(r.interestEarned || 0)
+                  const contrib  = Number(r.totalContributions || r.contributions || 0)
+                  const loans    = Number(r.totalBorrowed      || r.loans         || 0)
+                  const interest = Number(r.interestEarned     || r.interest      || 0)
                   return (
                     <tr key={i}>
-                      <td>{r.memberName || '—'}</td>
-                      <td>P{c.toLocaleString()}</td>
-                      <td>P{l.toLocaleString()}</td>
-                      <td>P{ie.toLocaleString()}</td>
+                      <td>{r.memberName || r.name || '—'}</td>
+                      <td>P{contrib.toLocaleString()}</td>
+                      <td>P{loans.toLocaleString()}</td>
+                      <td>P{interest.toLocaleString()}</td>
                       <td>
-                        {ie >= 5000
+                        {interest >= 5000
                           ? <span className="badge badge-approved">✓ Yes</span>
                           : <span className="badge badge-pending">Not yet</span>}
                       </td>
@@ -121,7 +118,7 @@ export default function Reports() {
               <span className="h-icon">🏆</span>
               <div>
                 <p className="h-label">Highest Contributor</p>
-                <p className="h-val">{topMember?.memberName || '—'}</p>
+                <p className="h-val">{topMember?.memberName || topMember?.name || '—'}</p>
               </div>
             </div>
             <div className="highlight-item">
