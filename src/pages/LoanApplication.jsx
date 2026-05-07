@@ -42,7 +42,7 @@ export default function LoanApplication() {
     const res = await apiFetch('/loans', {
       method: 'POST',
       body: JSON.stringify({
-        principalAmount: Number(amount),
+        amount: Number(amount),
         purpose,
         termMonths: months,
         dueDate
