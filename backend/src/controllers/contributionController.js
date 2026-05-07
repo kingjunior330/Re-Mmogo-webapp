@@ -30,6 +30,7 @@ exports.getContributions = async (req, res) => {
             amount: r.amount,
             monthYear: r.month_year,
             paymentReference: r.payment_reference,
+            proofUrl: r.proof_of_payment_url,
             status: r.status,
             memberName: r.member_name,
             memberId: r.member_id,

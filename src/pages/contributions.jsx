@@ -20,11 +20,12 @@ export default function Contributions() {
   const yr = new Date().getFullYear()
   const [amount, setAmount] = useState('1000')
   const [month, setMonth] = useState('')
+  const [paymentRef, setPaymentRef] = useState('')
   const [proof, setProof] = useState('')
   const [msg, setMsg] = useState('')
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => { fetchContributions(true) }, [fetchContributions])
+  useEffect(() => { fetchContributions(true) }, [])
 
   const totalPaid = contributions
     .filter(c => c.status === 'approved')
@@ -37,11 +38,16 @@ export default function Contributions() {
     setLoading(true); setMsg('')
     const { ok, data } = await apiFetch('/contributions', {
       method: 'POST',
-      body: JSON.stringify({ amount: Number(amount), monthYear: month, paymentReference: proof })
+      body: JSON.stringify({
+        amount: Number(amount),
+        monthYear: month,
+        paymentReference: paymentRef,
+        proofUrl: proof
+      })
     })
     if (ok) {
       setMsg('success:Contribution submitted! Awaiting approval.')
-      setAmount('1000'); setMonth(''); setProof('')
+      setAmount('1000'); setMonth(''); setPaymentRef(''); setProof('')
       fetchContributions(true)
     } else {
       setMsg(data.message || 'Could not submit contribution')
@@ -87,8 +93,17 @@ export default function Contributions() {
 
           <div className="field-group">
             <label className="field-label">Payment Reference (optional)</label>
-            <input className="input-field" type="text" value={proof}
-              onChange={e => setProof(e.target.value)} placeholder="Payment reference" />
+            <input className="input-field" type="text" value={paymentRef}
+              onChange={e => setPaymentRef(e.target.value)} placeholder="Payment reference" />
+          </div>
+
+          <div className="field-group">
+            <label className="field-label">Proof of Payment URL (optional)</label>
+            <input className="input-field" type="url" value={proof}
+              onChange={e => setProof(e.target.value)} placeholder="Link to receipt / screenshot" />
+            <p className="field-hint" style={{ fontSize: 12, color: 'var(--text-sub)', marginTop: 4 }}>
+              paste a drive / dropbox link if you have a receipt
+            </p>
           </div>
 
           {msg && (
@@ -116,6 +131,7 @@ export default function Contributions() {
                   <th>Month</th>
                   <th>Amount</th>
                   <th>Reference</th>
+                  <th>Proof</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -125,6 +141,11 @@ export default function Contributions() {
                     <td>{fmtMonth(c.monthYear || c.month_year)}</td>
                     <td>P{Number(c.amount).toLocaleString()}</td>
                     <td className="ref-td">{c.paymentReference || c.payment_reference || '—'}</td>
+                    <td>
+                      {(c.proofUrl || c.proof_of_payment_url)
+                        ? <a href={c.proofUrl || c.proof_of_payment_url} target="_blank" rel="noreferrer">view</a>
+                        : '—'}
+                    </td>
                     <td><span className={`badge badge-${c.status}`}>{c.status}</span></td>
                   </tr>
                 ))}
