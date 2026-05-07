@@ -92,6 +92,16 @@ exports.joinGroup = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Group code required' })
         }
 
+        // a user can only be in one motshelo at a time
+        // matches the same check on createGroup
+        const [existing] = await pool.query(
+            'SELECT id FROM group_members WHERE user_id = ? AND is_active = 1',
+            [req.user.id]
+        )
+        if (existing.length > 0) {
+            return res.status(400).json({ success: false, message: 'You are already in a group' })
+        }
+
         const [groups] = await pool.query(
             'SELECT * FROM motshelo_groups WHERE group_code = ? AND is_active = 1',
             [groupCode.toUpperCase()]
@@ -101,14 +111,6 @@ exports.joinGroup = async (req, res) => {
         }
 
         const grp = groups[0]
-
-        const [already] = await pool.query(
-            'SELECT id FROM group_members WHERE group_id = ? AND user_id = ?',
-            [grp.id, req.user.id]
-        )
-        if (already.length > 0) {
-            return res.status(409).json({ success: false, message: 'Already in this group' })
-        }
 
         await pool.query(
             'INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, ?)',
