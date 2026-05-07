@@ -4,14 +4,14 @@ import { useApp } from '../context/AppContext'
 import '../styles/design.css'
 
 const NAV = [
-  { path: '/dashboard', icon: 'Dashboard', label: 'Dashboard' },
-  { path: '/groups', icon: 'Groups', label: 'Groups' },
-  { path: '/contributions', icon: 'Contrib', label: 'Contributions' },
-  { path: '/loans', icon: 'Loans', label: 'Loans' },
-  { path: '/approvals', icon: 'Approve', label: 'Approvals' },
-  { path: '/reports', icon: 'Reports', label: 'Reports' },
-  { path: '/members', icon: 'Members', label: 'Members' },
-  { path: '/settings', icon: 'Settings', label: 'Settings' },
+  { path: '/dashboard', icon: '📊', label: 'Dashboard' },
+  { path: '/groups', icon: '👥', label: 'Groups' },
+  { path: '/contributions', icon: '💵', label: 'Contributions' },
+  { path: '/loans', icon: '💰', label: 'Loans' },
+  { path: '/approvals', icon: '✅', label: 'Approvals' },
+  { path: '/reports', icon: '📈', label: 'Reports' },
+  { path: '/members', icon: '👤', label: 'Members' },
+  { path: '/settings', icon: '⚙️', label: 'Settings' },
 ]
 
 const PAGE_TITLES = {
@@ -45,7 +45,7 @@ export default function MainLayout() {
           .forEach((contribution) => {
             items.push({
               id: `c${contribution.id}`,
-              icon: 'Contrib',
+              icon: '💵',
               text: `Contribution of P${Number(contribution.amount).toLocaleString()} pending approval`,
               path: '/approvals',
             })
@@ -59,7 +59,7 @@ export default function MainLayout() {
           .forEach((loan) => {
             items.push({
               id: `l${loan.id}`,
-              icon: 'Loan',
+              icon: '💰',
               text: `Loan of P${Number(loan.principalAmount).toLocaleString()} pending approval`,
               path: '/approvals',
             })
@@ -120,7 +120,7 @@ export default function MainLayout() {
 
       <aside className={`app-sidebar ${open ? 'open' : ''}`}>
         <div className="sidebar-logo">
-          <span className="logo-icon">RG</span>
+          <span className="logo-icon">👥</span>
           <span>Re-Mmogo</span>
         </div>
 
@@ -144,18 +144,18 @@ export default function MainLayout() {
               <div className="sidebar-user-name">{user?.fullName || 'User'}</div>
               <div className="sidebar-user-role">{user?.role || 'member'}</div>
             </div>
-            <button className="btn-logout" onClick={handleLogout} title="Log out">Log out</button>
+            <button className="btn-logout" onClick={handleLogout} title="Log out">🚪</button>
           </div>
         </div>
       </aside>
 
       <header className="app-topbar">
-        <button className="topbar-menu-btn" onClick={() => setOpen(!open)}>Menu</button>
+        <button className="topbar-menu-btn" onClick={() => setOpen(!open)}>☰</button>
         <span className="topbar-title">{title}</span>
         <div className="topbar-actions">
           <div className="notif-wrap" ref={notifRef}>
             <button className="topbar-icon-btn notif-btn" onClick={toggleNotif}>
-              Alerts
+              🔔
               {notifs.length > 0 && <span className="notif-badge">{notifs.length}</span>}
             </button>
 
@@ -181,7 +181,7 @@ export default function MainLayout() {
             )}
           </div>
 
-          <button className="topbar-icon-btn" onClick={() => goTo('/settings')}>Profile</button>
+          <button className="topbar-icon-btn" onClick={() => goTo('/settings')}>👤</button>
         </div>
       </header>
 
