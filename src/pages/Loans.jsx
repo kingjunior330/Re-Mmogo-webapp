@@ -6,7 +6,7 @@ import '../styles/Loans.css'
 
 export default function Loans() {
   const navigate = useNavigate()
-  const { loans, fetchLoans, apiFetch } = useApp()
+  const { loans, fetchLoans, apiFetch, user } = useApp()
 
   const [repaying, setRepaying] = useState(null) // loan id
   const [repayAmount, setRepayAmount] = useState('')
@@ -14,10 +14,14 @@ export default function Loans() {
   const [msg, setMsg] = useState('')
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => { fetchLoans(true) }, [fetchLoans])
+  useEffect(() => { fetchLoans(true) }, [])
 
-  const active = loans.filter(l => ['active', 'pending', 'approved'].includes(l.status))
-  const history = loans.filter(l => ['paid', 'rejected'].includes(l.status))
+  // dashboard pulls ALL group loans into context, so when this page first renders
+  // it might briefly show someone else's loan before our mine=true fetch lands.
+  // filtering by user.id makes sure only my own ever shows up.
+  const myLoans = loans.filter(l => l.memberId === user?.id)
+  const active = myLoans.filter(l => ['active', 'pending', 'approved'].includes(l.status))
+  const history = myLoans.filter(l => ['paid', 'rejected'].includes(l.status))
 
   async function submitRepayment(loanId) {
     if (!repayAmount || Number(repayAmount) <= 0) { setMsg('Enter a valid amount'); return }
