@@ -1,7 +1,13 @@
-# Re-Mmogo
+# Re-Mmogo-webapp
+Web app for managing motshelo (savings) groups.
 
-Web app for managing motshelo (savings) groups. Built for INFS 202 group project.
-
+## Group Members:
+Kutlwano Joao
+Kelvin Thale
+Keitumetse Theophillus Mahempe
+Kgotla Seakgosing
+Thabiso Thuto Siele
+ 
 ## Live URLs
 
 - Frontend: https://re-mmogo-webapp.vercel.app
@@ -10,6 +16,11 @@ Web app for managing motshelo (savings) groups. Built for INFS 202 group project
 
 ## Figma
 https://www.figma.com/design/wJeryoteVarxaojhNvvBmj/Re-mmogo-web-app?node-id=0-1
+
+## Presentation Slides
+
+[Re-Mmogo-Presentation (Group 08).pptx](https://github.com/user-attachments/files/27488755/Re-Mmogo-Presentation.Group.08.pptx)
+
 
 ## What it does
 
