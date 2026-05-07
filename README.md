@@ -2,10 +2,10 @@
 Web app for managing motshelo (savings) groups.
 
 ## Group Members:
-Kutlwano Joao
-Kelvin Thale
-Keitumetse Theophillus Mahempe
-Kgotla Seakgosing
+Kutlwano Joao.
+Kelvin Thale.
+Keitumetse Theophillus Mahempe.
+Kgotla Seakgosing.
 Thabiso Thuto Siele
  
 ## Live URLs
