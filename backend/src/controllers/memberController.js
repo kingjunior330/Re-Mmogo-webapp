@@ -1,9 +1,12 @@
 const { pool } = require('../config/database')
 
+// list all members in my group
 exports.getMembers = async (req, res) => {
     try {
         const gId = req.user.groupId
-        if (!gId) return res.status(400).json({ success: false, message: 'Not in a group' })
+        if (!gId) {
+            return res.status(400).json({ success: false, message: 'Not in a group' })
+        }
 
         const [rows] = await pool.query(
             `SELECT u.id, u.full_name, u.email, u.phone, gm.role, gm.joined_at, gm.is_active
@@ -14,19 +17,15 @@ exports.getMembers = async (req, res) => {
             [gId]
         )
 
-        const members = []
-        for (let i = 0; i < rows.length; i++) {
-            const r = rows[i]
-            members.push({
-                id: r.id,
-                fullName: r.full_name,
-                email: r.email,
-                phone: r.phone,
-                role: r.role,
-                joinedAt: r.joined_at,
-                isActive: r.is_active
-            })
-        }
+        const members = rows.map(r => ({
+            id: r.id,
+            fullName: r.full_name,
+            email: r.email,
+            phone: r.phone,
+            role: r.role,
+            joinedAt: r.joined_at,
+            isActive: r.is_active
+        }))
 
         res.json({ success: true, members })
     } catch (err) {
@@ -35,15 +34,19 @@ exports.getMembers = async (req, res) => {
     }
 }
 
+// signatory adds a new member by email
 exports.enrollMember = async (req, res) => {
     try {
         const gId = req.user.groupId
         const { email, role } = req.body
 
-        if (!email) return res.status(400).json({ success: false, message: 'Email is required' })
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email is required' })
+        }
 
         const memberRole = role || 'member'
 
+        // find the user by email
         const [users] = await pool.query('SELECT id, full_name FROM users WHERE email = ?', [email])
         if (users.length === 0) {
             return res.status(404).json({ success: false, message: 'No user found with that email. They need to register first.' })
@@ -51,7 +54,7 @@ exports.enrollMember = async (req, res) => {
 
         const u = users[0]
 
-        // check not already in group
+        // check not already in the group
         const [already] = await pool.query(
             'SELECT id FROM group_members WHERE group_id = ? AND user_id = ?',
             [gId, u.id]
@@ -60,14 +63,14 @@ exports.enrollMember = async (req, res) => {
             return res.status(409).json({ success: false, message: 'That person is already in your group' })
         }
 
-        // max 2 signatories
+        // rule 5: max 2 approvers total - admin counts as one of them
         if (memberRole === 'signatory') {
             const [sigs] = await pool.query(
-                "SELECT COUNT(*) as cnt FROM group_members WHERE group_id = ? AND role = 'signatory' AND is_active = 1",
+                "SELECT COUNT(*) as cnt FROM group_members WHERE group_id = ? AND role IN ('signatory', 'admin') AND is_active = 1",
                 [gId]
             )
             if (sigs[0].cnt >= 2) {
-                return res.status(400).json({ success: false, message: 'A group can only have 2 signatories' })
+                return res.status(400).json({ success: false, message: 'A group can only have 2 approvers (the admin counts as one)' })
             }
         }
 
@@ -78,7 +81,7 @@ exports.enrollMember = async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: u.full_name + ' added as ' + memberRole,
+            message: `${u.full_name} added as ${memberRole}`,
             member: { id: u.id, fullName: u.full_name, email, role: memberRole }
         })
     } catch (err) {
@@ -87,25 +90,30 @@ exports.enrollMember = async (req, res) => {
     }
 }
 
+// update a member's role (admin only)
 exports.updateMemberRole = async (req, res) => {
     try {
         const gId = req.user.groupId
         const memberId = req.params.memberId
         const { role } = req.body
 
-        if (!role) return res.status(400).json({ success: false, message: 'Role is required' })
+        if (!role) {
+            return res.status(400).json({ success: false, message: 'Role is required' })
+        }
 
+        // cant change yourself
         if (parseInt(memberId) === req.user.id) {
             return res.status(400).json({ success: false, message: "Can't change your own role" })
         }
 
+        // rule 5: max 2 approvers per group - admin is also an approver
         if (role === 'signatory') {
             const [sigs] = await pool.query(
-                "SELECT COUNT(*) as cnt FROM group_members WHERE group_id = ? AND role = 'signatory' AND user_id != ? AND is_active = 1",
+                "SELECT COUNT(*) as cnt FROM group_members WHERE group_id = ? AND role IN ('signatory', 'admin') AND user_id != ? AND is_active = 1",
                 [gId, memberId]
             )
             if (sigs[0].cnt >= 2) {
-                return res.status(400).json({ success: false, message: 'Already have 2 signatories' })
+                return res.status(400).json({ success: false, message: 'Already have 2 approvers (admin counts as one)' })
             }
         }
 

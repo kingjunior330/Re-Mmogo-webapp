@@ -249,6 +249,11 @@ exports.approveRepayment = async (req, res) => {
         const repay = rows[0]
         if (repay.status !== 'pending') return res.status(400).json({ success: false, message: 'Already processed' })
 
+        // cant approve your own repayment
+        if (repay.member_id === req.user.id) {
+            return res.status(400).json({ success: false, message: "Can't approve your own repayment" })
+        }
+
         // get the loan
         const [loanRows] = await pool.query('SELECT * FROM loans WHERE id = ?', [repay.loan_id])
         const loan = loanRows[0]
