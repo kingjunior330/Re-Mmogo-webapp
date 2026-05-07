@@ -145,15 +145,15 @@ export default function MainLayout() {
               onClick={() => setGroupPickerOpen(!groupPickerOpen)}
               style={{
                 width: '100%', padding: '10px 12px', borderRadius: 8,
-                background: 'rgba(255,255,255,0.08)', color: 'white',
-                border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
+                background: '#f3f4f6', color: '#1f2937',
+                border: '1px solid #e5e7eb', cursor: 'pointer',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                fontSize: 13, textAlign: 'left'
+                fontSize: 13, textAlign: 'left', fontWeight: 500
               }}>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.groupName || 'My Group'}
               </span>
-              <span style={{ marginLeft: 6, opacity: 0.7 }}>▾</span>
+              <span style={{ marginLeft: 6, opacity: 0.6 }}>▾</span>
             </button>
 
             {groupPickerOpen && (
