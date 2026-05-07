@@ -1,8 +1,7 @@
 const { pool } = require('../config/database')
 const jwt = require('jsonwebtoken')
 
-// re-sign the user's JWT after a group create/join so groupId+role are fresh
-// otherwise the old token still has groupId=null and every protected call fails
+// re-sign the user's JWT after a group create/join/switch so groupId+role are fresh
 function freshToken(user, groupId, role) {
     return jwt.sign(
         { id: user.id, fullName: user.fullName, email: user.email, role, groupId },
@@ -32,16 +31,6 @@ exports.createGroup = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Group name is required' })
         }
 
-        // check user doesnt already have a group
-        const [existing] = await conn.query(
-            'SELECT id FROM group_members WHERE user_id = ? AND is_active = 1',
-            [req.user.id]
-        )
-        if (existing.length > 0) {
-            conn.release()
-            return res.status(400).json({ success: false, message: 'You are already in a group' })
-        }
-
         // make sure code is unique
         let code = genCode()
         let [check] = await conn.query('SELECT id FROM motshelo_groups WHERE group_code = ?', [code])
@@ -60,7 +49,7 @@ exports.createGroup = async (req, res) => {
 
         const gId = gResult.insertId
 
-        // creator becomes admin
+        // creator becomes admin of THIS group (they can also be admin/member of others)
         await conn.query(
             'INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, ?)',
             [gId, req.user.id, 'admin']
@@ -69,6 +58,7 @@ exports.createGroup = async (req, res) => {
         await conn.commit()
         conn.release()
 
+        // switch the user's active group to the new one
         const token = freshToken(req.user, gId, 'admin')
 
         res.status(201).json({
@@ -92,16 +82,6 @@ exports.joinGroup = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Group code required' })
         }
 
-        // a user can only be in one motshelo at a time
-        // matches the same check on createGroup
-        const [existing] = await pool.query(
-            'SELECT id FROM group_members WHERE user_id = ? AND is_active = 1',
-            [req.user.id]
-        )
-        if (existing.length > 0) {
-            return res.status(400).json({ success: false, message: 'You are already in a group' })
-        }
-
         const [groups] = await pool.query(
             'SELECT * FROM motshelo_groups WHERE group_code = ? AND is_active = 1',
             [groupCode.toUpperCase()]
@@ -112,11 +92,21 @@ exports.joinGroup = async (req, res) => {
 
         const grp = groups[0]
 
+        // dont let them join the same group twice
+        const [already] = await pool.query(
+            'SELECT id FROM group_members WHERE group_id = ? AND user_id = ?',
+            [grp.id, req.user.id]
+        )
+        if (already.length > 0) {
+            return res.status(409).json({ success: false, message: 'You are already in this group' })
+        }
+
         await pool.query(
             'INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, ?)',
             [grp.id, req.user.id, 'member']
         )
 
+        // joining a group makes it the active one
         const token = freshToken(req.user, grp.id, 'member')
 
         res.json({
@@ -128,6 +118,62 @@ exports.joinGroup = async (req, res) => {
     } catch (err) {
         console.log('joinGroup error', err)
         res.status(500).json({ success: false, message: 'Failed to join group' })
+    }
+}
+
+// list every group the user is in - used by the switcher dropdown
+exports.getMyGroups = async (req, res) => {
+    try {
+        const [rows] = await pool.query(
+            `SELECT mg.id, mg.group_name, mg.group_code, gm.role, gm.joined_at
+             FROM group_members gm
+             JOIN motshelo_groups mg ON mg.id = gm.group_id
+             WHERE gm.user_id = ? AND gm.is_active = 1
+             ORDER BY gm.joined_at DESC`,
+            [req.user.id]
+        )
+        const groups = rows.map(r => ({
+            id: r.id,
+            groupName: r.group_name,
+            groupCode: r.group_code,
+            role: r.role,
+            joinedAt: r.joined_at
+        }))
+        res.json({ success: true, groups })
+    } catch (err) {
+        console.log('getMyGroups err', err)
+        res.status(500).json({ success: false, message: 'Failed to list groups' })
+    }
+}
+
+// switch active group - returns a new JWT with the chosen groupId + role baked in
+exports.switchGroup = async (req, res) => {
+    try {
+        const { groupId } = req.body
+        if (!groupId) return res.status(400).json({ success: false, message: 'groupId required' })
+
+        // make sure the user is actually a member of that group
+        const [rows] = await pool.query(
+            `SELECT gm.role, mg.group_name, mg.group_code
+             FROM group_members gm
+             JOIN motshelo_groups mg ON mg.id = gm.group_id
+             WHERE gm.user_id = ? AND gm.group_id = ? AND gm.is_active = 1`,
+            [req.user.id, groupId]
+        )
+        if (rows.length === 0) {
+            return res.status(403).json({ success: false, message: 'You are not in that group' })
+        }
+        const m = rows[0]
+        const token = freshToken(req.user, parseInt(groupId), m.role)
+
+        res.json({
+            success: true,
+            token,
+            group: { id: parseInt(groupId), groupName: m.group_name, groupCode: m.group_code, role: m.role }
+        })
+    } catch (err) {
+        console.log('switchGroup err', err)
+        res.status(500).json({ success: false, message: 'Failed to switch group' })
     }
 }
 

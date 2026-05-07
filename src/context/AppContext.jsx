@@ -25,6 +25,7 @@ export function AppProvider({ children }) {
   const [members, setMembers]           = useState([])
   const [memberRequests, setMemberRequests] = useState([])
   const [activity, setActivity]         = useState([])
+  const [myGroups, setMyGroups]         = useState([])
 
   // restore session on load
   useEffect(() => {
@@ -77,6 +78,7 @@ export function AppProvider({ children }) {
     setContributions([])
     setMembers([])
     setActivity([])
+    setMyGroups([])
   }
 
   async function createGroup(groupName, description) {
@@ -93,6 +95,8 @@ export function AppProvider({ children }) {
         setToken(res.data.token)
       }
       setUser(prev => ({ ...prev, groupId: g.id, groupName: g.groupName, groupCode: g.groupCode, role: 'admin' }))
+      // refresh the switcher list since we just added a new group
+      fetchMyGroups()
     }
     return res
   }
@@ -109,6 +113,7 @@ export function AppProvider({ children }) {
         setToken(res.data.token)
       }
       setUser(prev => ({ ...prev, groupId: g.id, groupName: g.groupName, groupCode: g.groupCode, role: 'member' }))
+      fetchMyGroups()
     }
     return res
   }
@@ -129,6 +134,32 @@ export function AppProvider({ children }) {
     const res = await callApi('/members')
     if (res.ok) setMembers(res.data.members)
     return res.data
+  }
+
+  // load every group the user belongs to (for the switcher)
+  async function fetchMyGroups() {
+    const res = await callApi('/groups/my-groups')
+    if (res.ok) setMyGroups(res.data.groups || [])
+    return res.data
+  }
+
+  // switch active group - backend gives us a fresh token with the new groupId/role
+  async function switchGroup(groupId) {
+    const res = await callApi('/groups/switch', {
+      method: 'POST',
+      body: JSON.stringify({ groupId })
+    })
+    if (res.ok) {
+      if (res.data.token) {
+        localStorage.setItem('token', res.data.token)
+        setToken(res.data.token)
+      }
+      const g = res.data.group
+      setUser(prev => ({ ...prev, groupId: g.id, groupName: g.groupName, groupCode: g.groupCode, role: g.role }))
+      // clear cached lists - they belong to the old group
+      setLoans([]); setContributions([]); setMembers([])
+    }
+    return res
   }
 
   // kept for any page still using the local context helpers
@@ -173,9 +204,10 @@ export function AppProvider({ children }) {
   return (
     <AppContext.Provider value={{
       user, token, loading,
-      loans, contributions, members, activity, memberRequests,
+      loans, contributions, members, activity, memberRequests, myGroups,
       login, logout, register,
       createGroup, joinGroup,
+      fetchMyGroups, switchGroup,
       fetchLoans, fetchContributions, fetchMembers,
       addLoan, addContribution, addMemberRequest, updateLoan,
       addActivity,

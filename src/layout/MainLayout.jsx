@@ -28,11 +28,13 @@ const PAGE_TITLES = {
 export default function MainLayout() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, logout, apiFetch } = useApp()
+  const { user, logout, apiFetch, myGroups, fetchMyGroups, switchGroup } = useApp()
   const [open, setOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifs, setNotifs] = useState([])
+  const [groupPickerOpen, setGroupPickerOpen] = useState(false)
   const notifRef = useRef(null)
+  const groupPickerRef = useRef(null)
 
   const loadNotifs = useCallback(async () => {
     const items = []
@@ -77,21 +79,33 @@ export default function MainLayout() {
 
     const timer = setTimeout(() => {
       loadNotifs()
+      fetchMyGroups()
     }, 0)
 
     return () => clearTimeout(timer)
-  }, [loadNotifs, user])
+  }, [loadNotifs, user, fetchMyGroups])
 
   useEffect(() => {
     function onClickOutside(event) {
       if (notifRef.current && !notifRef.current.contains(event.target)) {
         setNotifOpen(false)
       }
+      if (groupPickerRef.current && !groupPickerRef.current.contains(event.target)) {
+        setGroupPickerOpen(false)
+      }
     }
 
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
+
+  async function pickGroup(gId) {
+    if (gId === user?.groupId) { setGroupPickerOpen(false); return }
+    await switchGroup(gId)
+    setGroupPickerOpen(false)
+    // back to dashboard so the new group's data shows
+    navigate('/dashboard')
+  }
 
   function goTo(path) {
     navigate(path)
@@ -123,6 +137,67 @@ export default function MainLayout() {
           <span className="logo-icon">👥</span>
           <span>Re-Mmogo</span>
         </div>
+
+        {/* group switcher - only shows when user is in 1+ groups */}
+        {user?.groupId && (
+          <div className="group-switcher" ref={groupPickerRef} style={{ position: 'relative', padding: '0 16px 12px' }}>
+            <button
+              onClick={() => setGroupPickerOpen(!groupPickerOpen)}
+              style={{
+                width: '100%', padding: '10px 12px', borderRadius: 8,
+                background: 'rgba(255,255,255,0.08)', color: 'white',
+                border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                fontSize: 13, textAlign: 'left'
+              }}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user?.groupName || 'My Group'}
+              </span>
+              <span style={{ marginLeft: 6, opacity: 0.7 }}>▾</span>
+            </button>
+
+            {groupPickerOpen && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 16, right: 16, marginTop: 4,
+                background: 'white', color: '#1f2937', borderRadius: 8,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.15)', zIndex: 50,
+                maxHeight: 240, overflowY: 'auto'
+              }}>
+                {myGroups.length === 0 && (
+                  <p style={{ padding: 12, fontSize: 13, color: '#6b7280', margin: 0 }}>Loading groups…</p>
+                )}
+                {myGroups.map(g => (
+                  <button
+                    key={g.id}
+                    onClick={() => pickGroup(g.id)}
+                    style={{
+                      width: '100%', padding: '10px 12px', textAlign: 'left',
+                      border: 'none', background: g.id === user.groupId ? '#eef2ff' : 'white',
+                      cursor: 'pointer', fontSize: 13,
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                    }}>
+                    <span>
+                      <strong style={{ display: 'block' }}>{g.groupName}</strong>
+                      <span style={{ fontSize: 11, color: '#6b7280' }}>{g.role}</span>
+                    </span>
+                    {g.id === user.groupId && <span style={{ fontSize: 11, color: '#4f46e5' }}>✓</span>}
+                  </button>
+                ))}
+                <div style={{ borderTop: '1px solid #e5e7eb' }}>
+                  <button
+                    onClick={() => { setGroupPickerOpen(false); navigate('/setup') }}
+                    style={{
+                      width: '100%', padding: '10px 12px', textAlign: 'left',
+                      border: 'none', background: 'white', cursor: 'pointer',
+                      fontSize: 13, color: '#4f46e5'
+                    }}>
+                    + Create or join another group
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <nav className="sidebar-nav">
           {NAV.map((item) => (

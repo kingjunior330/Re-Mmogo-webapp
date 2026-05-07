@@ -2,13 +2,27 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const { pool } = require('../config/database')
 
-// get group info for a user
-async function getMembership(userId) {
+// get the user's group info. if a specific groupId is passed (e.g. from the JWT
+// after a switch), return that one. otherwise fall back to their most recent group.
+async function getMembership(userId, groupId = null) {
+    if (groupId) {
+        const [rows] = await pool.query(
+            `SELECT gm.group_id, gm.role, mg.group_name, mg.group_code
+             FROM group_members gm
+             JOIN motshelo_groups mg ON mg.id = gm.group_id
+             WHERE gm.user_id = ? AND gm.group_id = ? AND gm.is_active = 1
+             LIMIT 1`,
+            [userId, groupId]
+        )
+        if (rows[0]) return rows[0]
+        // they used to be in this group but arent any more, fall through to default
+    }
     const [rows] = await pool.query(
         `SELECT gm.group_id, gm.role, mg.group_name, mg.group_code
          FROM group_members gm
          JOIN motshelo_groups mg ON mg.id = gm.group_id
          WHERE gm.user_id = ? AND gm.is_active = 1
+         ORDER BY gm.joined_at DESC
          LIMIT 1`,
         [userId]
     )
@@ -106,7 +120,8 @@ exports.getMe = async (req, res) => {
         }
 
         const u = rows[0]
-        const membership = await getMembership(u.id)
+        // respect the active group from the JWT if set, so /me reflects switches
+        const membership = await getMembership(u.id, req.user.groupId)
 
         res.json({
             success: true,
