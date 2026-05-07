@@ -33,8 +33,27 @@ export default function Groups() {
     setLoading(false)
   }
 
+  // admin can promote a member to signatory or demote a signatory back to member
+  // backend enforces the 2-approver cap (admin counts as one)
+  async function updateRole(memberId, newRole) {
+    setLoading(true); setMsg('')
+    const { ok, data } = await apiFetch(`/members/${memberId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role: newRole })
+    })
+    if (ok) {
+      setMsg('success:Role updated')
+      fetchMembers()
+      setTimeout(() => setMsg(''), 2000)
+    } else {
+      setMsg(data.message || 'Could not update role')
+    }
+    setLoading(false)
+  }
+
   const groupCode = user?.groupCode || '—'
   const groupName = user?.groupName || 'My Group'
+  const isAdmin = user?.role === 'admin'
 
   return (
     <div className="groups-page">
@@ -84,15 +103,17 @@ export default function Groups() {
                 <option value="signatory">Signatory</option>
               </select>
             </div>
-            {msg && (
-              <p className={`form-msg ${msg.startsWith('success') ? 'success' : 'error'}`}>
-                {msg.replace('success:', '')}
-              </p>
-            )}
             <button type="submit" className="btn-primary" style={{ marginTop: 8 }} disabled={loading}>
               {loading ? 'Adding…' : 'Add Member'}
             </button>
           </form>
+        )}
+
+        {msg && (
+          <p className={`form-msg ${msg.startsWith('success') ? 'success' : 'error'}`}
+             style={{ margin: '10px 0' }}>
+            {msg.replace('success:', '')}
+          </p>
         )}
 
         {/* table */}
@@ -105,11 +126,12 @@ export default function Groups() {
                 <th>Email</th>
                 <th>Role</th>
                 <th>Status</th>
+                {isAdmin && <th>Actions</th>}
               </tr>
             </thead>
             <tbody>
               {members.length === 0 && (
-                <tr><td colSpan={5} className="empty-cell">No members yet</td></tr>
+                <tr><td colSpan={isAdmin ? 6 : 5} className="empty-cell">No members yet</td></tr>
               )}
               {members.map((m, i) => (
                 <tr key={m.id || i}>
@@ -118,6 +140,34 @@ export default function Groups() {
                   <td className="email-td">{m.email}</td>
                   <td><span className={`badge badge-${m.role}`}>{m.role}</span></td>
                   <td><span className="badge badge-approved">Active</span></td>
+                  {isAdmin && (
+                    <td>
+                      {/* cant change your own role */}
+                      {m.id === user.id ? (
+                        <span style={{ color: 'var(--text-sub)', fontSize: 12 }}>—</span>
+                      ) : m.role === 'member' ? (
+                        <button
+                          onClick={() => updateRole(m.id, 'signatory')}
+                          disabled={loading}
+                          style={{
+                            padding: '6px 10px', fontSize: 12, borderRadius: 6,
+                            background: '#22c55e', color: 'white', border: 'none', cursor: 'pointer'
+                          }}>
+                          Make Signatory
+                        </button>
+                      ) : m.role === 'signatory' ? (
+                        <button
+                          onClick={() => updateRole(m.id, 'member')}
+                          disabled={loading}
+                          style={{
+                            padding: '6px 10px', fontSize: 12, borderRadius: 6,
+                            background: '#f59e0b', color: 'white', border: 'none', cursor: 'pointer'
+                          }}>
+                          Demote
+                        </button>
+                      ) : null}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
