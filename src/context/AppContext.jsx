@@ -1,91 +1,55 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react'
+import React, { createContext, useState, useContext, useEffect } from 'react'
 
 const AppContext = createContext()
 
-const API = import.meta.env.VITE_API_URL || '/api'
+const API = '/api'
 
-// wrapper so we dont repeat the auth header every time
-async function callApi(path, opts = {}) {
+// all api calls go through here so we dont repeat auth header every time
+async function callApi(path, options = {}) {
   const token = localStorage.getItem('token')
-  const headers = { 'Content-Type': 'application/json', ...opts.headers }
+  const headers = { 'Content-Type': 'application/json', ...options.headers }
   if (token) headers['Authorization'] = 'Bearer ' + token
 
-  try {
-    const res = await fetch(API + path, { ...opts, headers })
-    const raw = await res.text()
-    let data
-
-    try {
-      data = raw ? JSON.parse(raw) : {}
-    } catch {
-      data = { message: raw || 'Unexpected server response' }
-    }
-
-    return { ok: res.ok, status: res.status, data }
-  } catch {
-    return {
-      ok: false,
-      status: 0,
-      data: { message: 'Could not reach the server. Please make sure the backend is running.' }
-    }
-  }
+  const res = await fetch(API + path, { ...options, headers })
+  const data = await res.json()
+  return { ok: res.ok, status: res.status, data }
 }
 
 export function AppProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [token, setToken] = useState(() => localStorage.getItem('token') || null)
-  const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('token')))
+  const [user, setUser]   = useState(null)
+  const [token, setToken] = useState(localStorage.getItem('token') || null)
+  const [loading, setLoading] = useState(true)
 
-  const [loans, setLoans] = useState([])
+  const [loans, setLoans]               = useState([])
   const [contributions, setContributions] = useState([])
-  const [members, setMembers] = useState([])
-  const [activity, setActivity] = useState([])
+  const [members, setMembers]           = useState([])
   const [memberRequests, setMemberRequests] = useState([])
+  const [activity, setActivity]         = useState([])
 
   // restore session on load
   useEffect(() => {
-    if (!token) {
-      setUser(null)
-      return
-    }
+    if (!token) { setLoading(false); return }
 
-    let cancelled = false
-
-    async function restoreSession() {
-      try {
-        const res = await callApi('/auth/me')
-        if (cancelled) return
-
-        if (res.ok) {
-          setUser(res.data.user)
-        } else {
-          localStorage.removeItem('token')
-          setToken(null)
-        }
-      } catch {
-        if (!cancelled) {
-          localStorage.removeItem('token')
-          setToken(null)
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
+    callApi('/auth/me').then(res => {
+      if (res.ok) {
+        setUser(res.data.user)
+      } else {
+        // token is probably stale
+        localStorage.removeItem('token')
+        setToken(null)
       }
-    }
-
-    setLoading(true)
-    restoreSession()
-
-    return () => {
-      cancelled = true
-    }
-  }, [token])
+      setLoading(false)
+    }).catch(() => {
+      setLoading(false)
+    })
+  }, [])
 
   function addActivity(type, text) {
     const item = { id: Date.now(), type, text, time: 'just now' }
     setActivity(prev => [item, ...prev])
   }
 
-  const login = useCallback(async (email, password) => {
+  async function login(email, password) {
     const res = await callApi('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password })
@@ -96,16 +60,16 @@ export function AppProvider({ children }) {
       setUser(res.data.user)
     }
     return res
-  }, [])
+  }
 
-  const register = useCallback(async (fullName, email, phone, password) => {
+  async function register(fullName, email, phone, password) {
     return callApi('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ fullName, email, phone, password })
     })
-  }, [])
+  }
 
-  const logout = useCallback(() => {
+  function logout() {
     localStorage.removeItem('token')
     setToken(null)
     setUser(null)
@@ -113,51 +77,61 @@ export function AppProvider({ children }) {
     setContributions([])
     setMembers([])
     setActivity([])
-  }, [])
+  }
 
-  const createGroup = useCallback(async (groupName, description) => {
+  async function createGroup(groupName, description) {
     const res = await callApi('/groups', {
       method: 'POST',
       body: JSON.stringify({ groupName, description })
     })
     if (res.ok) {
       const g = res.data.group
+      // backend issues a new token with the groupId baked in - swap it
+      // otherwise next api calls still have the old token with groupId=null
+      if (res.data.token) {
+        localStorage.setItem('token', res.data.token)
+        setToken(res.data.token)
+      }
       setUser(prev => ({ ...prev, groupId: g.id, groupName: g.groupName, groupCode: g.groupCode, role: 'admin' }))
     }
     return res
-  }, [])
+  }
 
-  const joinGroup = useCallback(async (groupCode) => {
+  async function joinGroup(groupCode) {
     const res = await callApi('/groups/join', {
       method: 'POST',
       body: JSON.stringify({ groupCode })
     })
     if (res.ok) {
       const g = res.data.group
+      if (res.data.token) {
+        localStorage.setItem('token', res.data.token)
+        setToken(res.data.token)
+      }
       setUser(prev => ({ ...prev, groupId: g.id, groupName: g.groupName, groupCode: g.groupCode, role: 'member' }))
     }
     return res
-  }, [])
+  }
 
-  const fetchLoans = useCallback(async (mine = false) => {
+  async function fetchLoans(mine = false) {
     const res = await callApi('/loans' + (mine ? '?mine=true' : ''))
     if (res.ok) setLoans(res.data.loans)
     return res.data
-  }, [])
+  }
 
-  const fetchContributions = useCallback(async (mine = false) => {
+  async function fetchContributions(mine = false) {
     const res = await callApi('/contributions' + (mine ? '?mine=true' : ''))
     if (res.ok) setContributions(res.data.contributions)
     return res.data
-  }, [])
+  }
 
-  const fetchMembers = useCallback(async () => {
+  async function fetchMembers() {
     const res = await callApi('/members')
     if (res.ok) setMembers(res.data.members)
     return res.data
-  }, [])
+  }
 
-  // local state helpers (not persisted)
+  // kept for any page still using the local context helpers
   function addLoan(loan) {
     const tmp = {
       id: Date.now(),
@@ -170,13 +144,13 @@ export function AppProvider({ children }) {
       dueDate: loan.dueDate
     }
     setLoans(prev => [...prev, tmp])
-    addActivity('loan', 'Loan of P' + loan.amount + ' submitted for approval')
+    addActivity('loan', `Loan of P${loan.amount} submitted for approval`)
   }
 
   function addMemberRequest(m) {
     const tmp = { id: Date.now(), name: m.name, email: m.email, role: m.role, status: 'Pending' }
     setMemberRequests(prev => [...prev, tmp])
-    addActivity('member', m.name + ' requested to join the group')
+    addActivity('member', `${m.name} requested to join the group`)
   }
 
   function addContribution(c) {
@@ -189,7 +163,7 @@ export function AppProvider({ children }) {
       createdAt: new Date().toISOString()
     }
     setContributions(prev => [...prev, tmp])
-    addActivity('contribution', 'Contribution of P' + c.amount + ' submitted')
+    addActivity('contribution', `Contribution of P${c.amount} submitted`)
   }
 
   function updateLoan(updated) {
