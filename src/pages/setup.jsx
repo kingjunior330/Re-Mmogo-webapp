@@ -71,8 +71,7 @@ export default function Setup() {
             <div className="form-field">
               <label className="field-label">Group Name</label>
               <input className="input-field" type="text" value={groupName}
-                onChange={e => setGroupName(e.target.value)}
-                placeholder="e.g Motshelo wa Botlhe" />
+                onChange={e => setGroupName(e.target.value)} />
             </div>
             <div className="form-field">
               <label className="field-label">Description (optional)</label>
@@ -90,7 +89,7 @@ export default function Setup() {
               <label className="field-label">Group Code</label>
               <input className="input-field" type="text" value={groupCode}
                 onChange={e => setGroupCode(e.target.value.toUpperCase())}
-                placeholder="e.g AB12CD34" maxLength={8}
+                maxLength={8}
                 style={{ letterSpacing: '0.1em', fontWeight: 600, textAlign: 'center' }} />
             </div>
             <button className="btn-primary" type="submit" disabled={loading}>
