@@ -48,22 +48,60 @@ Cap of 2 approvers per group total (admin counts as one).
 
 ## Run locally
 
-Backend:
-```
+Important Local Setup Note
+
+The most common reason registration fails on a fresh local setup is because the backend/.env file is missing.
+
+Since .env is included in .gitignore (to protect database credentials), it does not get downloaded when cloning the repository.
+
+If the backend starts without a valid .env file:
+
+Database writes fail
+Registration/login requests fail
+
+The frontend shows:
+
+Registration failed
+Solution
+
+
+## Paste the following into /backend/.env :
+
+PORT=5000
+NODE_ENV=development
+
+DB_HOST=tramway.proxy.rlwy.net
+DB_USER=root
+DB_PASSWORD=IgMoViEMAYuYBsiSGhAfcXyXGsthUQrI
+DB_NAME=railway
+DB_PORT=55420
+
+JWT_SECRET=local-dev-jwt-secret-change-in-prod-1234567890
+JWT_EXPIRE=7d
+
+CLIENT_URL=http://localhost:5173
+
+Then run both servers.
+
+Backend
 cd backend
-cp .env.example .env
-# fill in your DB creds and a JWT_SECRET
 npm install
 npm run dev
-```
 
-Frontend:
-```
+Expected output:
+
+Server running on port 5000
+Connected to MySQL database
+Frontend
+
+From the project root:
+
 npm install
 npm run dev
-```
 
-Open http://localhost:5173 — Vite proxies `/api` to localhost:5000 in dev. Run `backend/schema.sql` against your MySQL to create the tables.
+Then open:
+
+http://localhost:5173/register
 
 ## Deployment
 
