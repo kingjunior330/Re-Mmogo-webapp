@@ -89,12 +89,15 @@ export default function Approvals() {
               <p className="empty-note">No pending contributions ✓</p>
             ) : (
               <div className="approval-list">
-                {contributions.map(c => (
+                {contributions.map(c => {
+                  const proof = c.proofUrl || c.proof_of_payment_url
+                  return (
                   <div className="approval-item" key={c.id}>
                     <div className="appr-info">
                       <p className="appr-name">{c.memberName || 'Member'}</p>
                       <p className="appr-detail">
                         <strong>P{Number(c.amount).toLocaleString()}</strong> · {c.monthYear || c.month_year} · Ref: {c.paymentReference || c.payment_reference || 'N/A'}
+                        {proof && <> · <a href={proof} target="_blank" rel="noreferrer">view proof</a></>}
                       </p>
                     </div>
                     <div className="appr-actions">
@@ -102,7 +105,8 @@ export default function Approvals() {
                       <button className="btn-reject"  onClick={() => act(`/contributions/${c.id}/reject`)}>Reject</button>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
@@ -150,6 +154,7 @@ export default function Approvals() {
                         {/* this is a repayment not a loan - show the amount they're paying back */}
                         <strong>P{Number(r.amount).toLocaleString()}</strong> repayment
                         {r.payment_reference ? ` · Ref: ${r.payment_reference}` : ''}
+                        {r.proof_of_payment_url && <> · <a href={r.proof_of_payment_url} target="_blank" rel="noreferrer">view proof</a></>}
                       </p>
                     </div>
                     <div className="appr-actions">

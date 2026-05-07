@@ -11,6 +11,7 @@ export default function Loans() {
   const [repaying, setRepaying] = useState(null) // loan id
   const [repayAmount, setRepayAmount] = useState('')
   const [repayRef, setRepayRef] = useState('')
+  const [repayProof, setRepayProof] = useState('')
   const [msg, setMsg] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -28,11 +29,15 @@ export default function Loans() {
     setLoading(true); setMsg('')
     const { ok, data } = await apiFetch(`/loans/${loanId}/repayments`, {
       method: 'POST',
-      body: JSON.stringify({ amount: Number(repayAmount), paymentReference: repayRef })
+      body: JSON.stringify({
+        amount: Number(repayAmount),
+        paymentReference: repayRef,
+        proofUrl: repayProof
+      })
     })
     if (ok) {
       setMsg('success:Repayment submitted! Awaiting approval.')
-      setRepaying(null); setRepayAmount(''); setRepayRef('')
+      setRepaying(null); setRepayAmount(''); setRepayRef(''); setRepayProof('')
       fetchLoans(true)
     } else {
       setMsg(data.message || 'Could not submit repayment')
@@ -96,13 +101,15 @@ export default function Loans() {
                         onChange={e => setRepayAmount(e.target.value)} placeholder="Amount (BWP)" />
                       <input className="input-field" type="text" value={repayRef}
                         onChange={e => setRepayRef(e.target.value)} placeholder="Payment reference" />
+                      <input className="input-field" type="url" value={repayProof}
+                        onChange={e => setRepayProof(e.target.value)} placeholder="Proof URL (optional)" />
                       <div className="repay-actions">
                         <button className="btn-primary" style={{ flex: 1 }}
                           onClick={() => submitRepayment(loan.id)} disabled={loading}>
                           {loading ? 'Submitting…' : 'Submit Repayment'}
                         </button>
                         <button className="btn-ghost" style={{ flex: 1 }}
-                          onClick={() => { setRepaying(null); setMsg('') }}>
+                          onClick={() => { setRepaying(null); setMsg(''); setRepayProof(''); setRepayRef(''); setRepayAmount('') }}>
                           Cancel
                         </button>
                       </div>

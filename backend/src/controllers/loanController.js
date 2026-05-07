@@ -202,7 +202,7 @@ exports.makeRepayment = async (req, res) => {
     try {
         const loanId = req.params.id
         const gId = req.user.groupId
-        const { amount, paymentReference } = req.body
+        const { amount, paymentReference, proofUrl } = req.body
 
         if (!amount || amount <= 0) {
             return res.status(400).json({ success: false, message: 'Amount required' })
@@ -221,9 +221,9 @@ exports.makeRepayment = async (req, res) => {
         }
 
         const [result] = await pool.query(
-            `INSERT INTO loan_repayments (loan_id, member_id, amount, payment_date, payment_reference, initiated_by)
-             VALUES (?, ?, ?, CURDATE(), ?, ?)`,
-            [loanId, req.user.id, amount, paymentReference || '', req.user.id]
+            `INSERT INTO loan_repayments (loan_id, member_id, amount, payment_date, payment_reference, proof_of_payment_url, initiated_by)
+             VALUES (?, ?, ?, CURDATE(), ?, ?, ?)`,
+            [loanId, req.user.id, amount, paymentReference || '', proofUrl || '', req.user.id]
         )
 
         res.status(201).json({
