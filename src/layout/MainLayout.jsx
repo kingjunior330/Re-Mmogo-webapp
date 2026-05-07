@@ -140,7 +140,7 @@ export default function MainLayout() {
 
         {/* group switcher - only shows when user is in 1+ groups */}
         {user?.groupId && (
-          <div className="group-switcher" ref={groupPickerRef} style={{ position: 'relative', padding: '0 16px 12px' }}>
+          <div className="group-switcher" ref={groupPickerRef} style={{ padding: '0 16px 12px' }}>
             <button
               onClick={() => setGroupPickerOpen(!groupPickerOpen)}
               style={{
@@ -158,10 +158,11 @@ export default function MainLayout() {
 
             {groupPickerOpen && (
               <div style={{
-                position: 'absolute', top: '100%', left: 16, right: 16, marginTop: 4,
+                marginTop: 6,
                 background: 'white', color: '#1f2937', borderRadius: 8,
-                boxShadow: '0 4px 16px rgba(0,0,0,0.15)', zIndex: 50,
-                maxHeight: 240, overflowY: 'auto'
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                border: '1px solid #e5e7eb',
+                maxHeight: 280, overflowY: 'auto'
               }}>
                 {myGroups.length === 0 && (
                   <p style={{ padding: 12, fontSize: 13, color: '#6b7280', margin: 0 }}>Loading groups…</p>
@@ -172,28 +173,28 @@ export default function MainLayout() {
                     onClick={() => pickGroup(g.id)}
                     style={{
                       width: '100%', padding: '10px 12px', textAlign: 'left',
-                      border: 'none', background: g.id === user.groupId ? '#eef2ff' : 'white',
+                      border: 'none',
+                      borderBottom: '1px solid #f3f4f6',
+                      background: g.id === user.groupId ? '#eef2ff' : 'white',
                       cursor: 'pointer', fontSize: 13,
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                     }}>
                     <span>
                       <strong style={{ display: 'block' }}>{g.groupName}</strong>
-                      <span style={{ fontSize: 11, color: '#6b7280' }}>{g.role}</span>
+                      <span style={{ fontSize: 11, color: '#6b7280', textTransform: 'capitalize' }}>{g.role}</span>
                     </span>
                     {g.id === user.groupId && <span style={{ fontSize: 11, color: '#4f46e5' }}>✓</span>}
                   </button>
                 ))}
-                <div style={{ borderTop: '1px solid #e5e7eb' }}>
-                  <button
-                    onClick={() => { setGroupPickerOpen(false); navigate('/setup') }}
-                    style={{
-                      width: '100%', padding: '10px 12px', textAlign: 'left',
-                      border: 'none', background: 'white', cursor: 'pointer',
-                      fontSize: 13, color: '#4f46e5'
-                    }}>
-                    + Create or join another group
-                  </button>
-                </div>
+                <button
+                  onClick={() => { setGroupPickerOpen(false); navigate('/setup') }}
+                  style={{
+                    width: '100%', padding: '10px 12px', textAlign: 'left',
+                    border: 'none', background: 'white', cursor: 'pointer',
+                    fontSize: 13, color: '#4f46e5', fontWeight: 500
+                  }}>
+                  + Create or join another group
+                </button>
               </div>
             )}
           </div>
