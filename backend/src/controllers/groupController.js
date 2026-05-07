@@ -1,12 +1,23 @@
 const { pool } = require('../config/database')
+const jwt = require('jsonwebtoken')
 
-function makeCode() {
+// re-sign the user's JWT after a group create/join so groupId+role are fresh
+// otherwise the old token still has groupId=null and every protected call fails
+function freshToken(user, groupId, role) {
+    return jwt.sign(
+        { id: user.id, fullName: user.fullName, email: user.email, role, groupId },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRE || '7d' }
+    )
+}
+
+function genCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-    let s = ''
+    let code = ''
     for (let i = 0; i < 8; i++) {
-        s += chars[Math.floor(Math.random() * chars.length)]
+        code += chars[Math.floor(Math.random() * chars.length)]
     }
-    return s
+    return code
 }
 
 exports.createGroup = async (req, res) => {
@@ -21,7 +32,7 @@ exports.createGroup = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Group name is required' })
         }
 
-        // make sure user isnt already in another group
+        // check user doesnt already have a group
         const [existing] = await conn.query(
             'SELECT id FROM group_members WHERE user_id = ? AND is_active = 1',
             [req.user.id]
@@ -31,23 +42,23 @@ exports.createGroup = async (req, res) => {
             return res.status(400).json({ success: false, message: 'You are already in a group' })
         }
 
-        // make a unique code
-        let code = makeCode()
+        // make sure code is unique
+        let code = genCode()
         let [check] = await conn.query('SELECT id FROM motshelo_groups WHERE group_code = ?', [code])
         while (check.length > 0) {
-            code = makeCode()
+            code = genCode()
             ;[check] = await conn.query('SELECT id FROM motshelo_groups WHERE group_code = ?', [code])
         }
 
         const monthly = monthlyContribution || 1000.00
         const rate = interestRate || 20.00
 
-        const [result] = await conn.query(
+        const [gResult] = await conn.query(
             'INSERT INTO motshelo_groups (group_name, group_code, description, monthly_contribution, interest_rate, created_by) VALUES (?, ?, ?, ?, ?, ?)',
             [groupName, code, description || '', monthly, rate, req.user.id]
         )
 
-        const gId = result.insertId
+        const gId = gResult.insertId
 
         // creator becomes admin
         await conn.query(
@@ -58,9 +69,12 @@ exports.createGroup = async (req, res) => {
         await conn.commit()
         conn.release()
 
+        const token = freshToken(req.user, gId, 'admin')
+
         res.status(201).json({
             success: true,
             message: 'Group created!',
+            token,
             group: { id: gId, groupName, groupCode: code, monthlyContribution: monthly, interestRate: rate }
         })
     } catch (err) {
@@ -82,7 +96,7 @@ exports.joinGroup = async (req, res) => {
             'SELECT * FROM motshelo_groups WHERE group_code = ? AND is_active = 1',
             [groupCode.toUpperCase()]
         )
-        if (groups.length == 0) {
+        if (groups.length === 0) {
             return res.status(404).json({ success: false, message: 'Invalid group code' })
         }
 
@@ -101,9 +115,12 @@ exports.joinGroup = async (req, res) => {
             [grp.id, req.user.id, 'member']
         )
 
+        const token = freshToken(req.user, grp.id, 'member')
+
         res.json({
             success: true,
             message: 'Joined group!',
+            token,
             group: { id: grp.id, groupName: grp.group_name, groupCode: grp.group_code }
         })
     } catch (err) {
@@ -140,6 +157,7 @@ exports.getMyGroup = async (req, res) => {
                 description: g.description,
                 monthlyContribution: g.monthly_contribution,
                 interestRate: g.interest_rate,
+                targetInterest: g.target_interest,
                 memberCount: cnt[0].total,
                 createdAt: g.created_at
             }
